@@ -1,9 +1,9 @@
-import os
+import numpy as np
 import pandas as pd
 
 
 # 数据文件路径设置
-file_path = os.getcwd() + '\\data\\'
+file_path = 'data\\'
 source_file = file_path + '399300.csv'
 target_file = file_path + '399300_new.csv'
 # 以下是特征数据文件
@@ -28,6 +28,8 @@ hsi_file = file_path + 'HSI.csv'
 
 global df
 
+# 数据归一化处理
+data_normalization = lambda x : (x - np.min(x)) / (np.max(x) - np.min(x))
 
 def get_stock_index_data(inp_file):
     """
@@ -35,9 +37,8 @@ def get_stock_index_data(inp_file):
     """
     global df
     try:
-        df = pd.read_csv(inp_file)
-        df['trade_date'] = pd.to_datetime(df['trade_date'])
-        df.set_index('trade_date', inplace=True)
+        df = pd.read_csv(inp_file, index_col='trade_date')
+        df.index = pd.to_datetime(df.index)
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
@@ -50,19 +51,20 @@ def add_usdx(inp_file):
     global df
 
     try:
-        df_usdx = pd.read_csv(inp_file)
+        df_usdx = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_usdx['trade_date'] = pd.to_datetime(df_usdx['trade_date'])
-    df_usdx.set_index('trade_date', inplace=True)
+    df_usdx.index = pd.to_datetime(df_usdx.index)
     df_usdx = pd.Series(df_usdx['close'], name='USDX')
 
     df = df.join(df_usdx)
 
     # 补全缺失值
     df['USDX'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['USDX'] = df[['USDX']].apply(data_normalization)
 
 
 def add_usdcny(inp_file):
@@ -72,19 +74,20 @@ def add_usdcny(inp_file):
     global df
 
     try:
-        df_usdcny = pd.read_csv(inp_file)
+        df_usdcny = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_usdcny['trade_date'] = pd.to_datetime(df_usdcny['trade_date'])
-    df_usdcny.set_index('trade_date', inplace=True)
+    df_usdcny.index = pd.to_datetime(df_usdcny.index)
     df_usdcny = pd.Series(df_usdcny['close'], name='USDCNY')
 
     df = df.join(df_usdcny)
 
     # 补全缺失值
     df['USDCNY'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['USDCNY'] = df[['USDCNY']].apply(data_normalization)
 
 
 def add_usdjpy(inp_file):
@@ -94,19 +97,20 @@ def add_usdjpy(inp_file):
     global df
 
     try:
-        df_usdjpy = pd.read_csv(inp_file)
+        df_usdjpy = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_usdjpy['trade_date'] = pd.to_datetime(df_usdjpy['trade_date'])
-    df_usdjpy.set_index('trade_date', inplace=True)
+    df_usdjpy.index = pd.to_datetime(df_usdjpy.index)
     df_usdjpy = pd.Series(df_usdjpy['close'], name='USDJPY')
 
     df = df.join(df_usdjpy)
 
     # 补全缺失值
     df['USDJPY'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['USDJPY'] = df[['USDJPY']].apply(data_normalization)
 
 
 def add_audusd(inp_file):
@@ -116,19 +120,20 @@ def add_audusd(inp_file):
     global df
 
     try:
-        df_audusd = pd.read_csv(inp_file)
+        df_audusd = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_audusd['trade_date'] = pd.to_datetime(df_audusd['trade_date'])
-    df_audusd.set_index('trade_date', inplace=True)
+    df_audusd.index = pd.to_datetime(df_audusd.index)
     df_audusd = pd.Series(df_audusd['close'], name='AUDUSD')
 
     df = df.join(df_audusd)
 
     # 补全缺失值
     df['AUDUSD'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['AUDUSD'] = df[['AUDUSD']].apply(data_normalization)
 
 
 def add_eurusd(inp_file):
@@ -138,19 +143,20 @@ def add_eurusd(inp_file):
     global df
 
     try:
-        df_eurusd = pd.read_csv(inp_file)
+        df_eurusd = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_eurusd['trade_date'] = pd.to_datetime(df_eurusd['trade_date'])
-    df_eurusd.set_index('trade_date', inplace=True)
+    df_eurusd.index = pd.to_datetime(df_eurusd.index)
     df_eurusd = pd.Series(df_eurusd['close'], name='EURUSD')
 
     df = df.join(df_eurusd)
 
     # 补全缺失值
     df['EURUSD'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['EURUSD'] = df[['EURUSD']].apply(data_normalization)
 
 
 def add_gbpusd(inp_file):
@@ -160,19 +166,20 @@ def add_gbpusd(inp_file):
     global df
 
     try:
-        df_gbpusd = pd.read_csv(inp_file)
+        df_gbpusd = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_gbpusd['trade_date'] = pd.to_datetime(df_gbpusd['trade_date'])
-    df_gbpusd.set_index('trade_date', inplace=True)
+    df_gbpusd.index = pd.to_datetime(df_gbpusd.index)
     df_gbpusd = pd.Series(df_gbpusd['close'], name='GBPUSD')
 
     df = df.join(df_gbpusd)
 
     # 补全缺失值
     df['GBPUSD'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['GBPUSD'] = df[['GBPUSD']].apply(data_normalization)
 
 
 def add_xauusd(inp_file):
@@ -182,19 +189,20 @@ def add_xauusd(inp_file):
     global df
 
     try:
-        df_xauusd = pd.read_csv(inp_file)
+        df_xauusd = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_xauusd['trade_date'] = pd.to_datetime(df_xauusd['trade_date'])
-    df_xauusd.set_index('trade_date', inplace=True)
+    df_xauusd.index = pd.to_datetime(df_xauusd.index)
     df_xauusd = pd.Series(df_xauusd['close'], name='XAUUSD')
 
     df = df.join(df_xauusd)
 
     # 补全缺失值
     df['XAUUSD'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['XAUUSD'] = df[['XAUUSD']].apply(data_normalization)
 
 
 def add_xagusd(inp_file):
@@ -204,19 +212,20 @@ def add_xagusd(inp_file):
     global df
 
     try:
-        df_xagusd = pd.read_csv(inp_file)
+        df_xagusd = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_xagusd['trade_date'] = pd.to_datetime(df_xagusd['trade_date'])
-    df_xagusd.set_index('trade_date', inplace=True)
+    df_xagusd.index = pd.to_datetime(df_xagusd.index)
     df_xagusd = pd.Series(df_xagusd['close'], name='XAGUSD')
 
     df = df.join(df_xagusd)
 
     # 补全缺失值
     df['XAGUSD'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['XAGUSD'] = df[['XAGUSD']].apply(data_normalization)
 
 
 def add_bulkstock(inp_file):
@@ -226,19 +235,20 @@ def add_bulkstock(inp_file):
     global df
 
     try:
-        df_bulkstock = pd.read_csv(inp_file)
+        df_bulkstock = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_bulkstock['trade_date'] = pd.to_datetime(df_bulkstock['trade_date'])
-    df_bulkstock.set_index('trade_date', inplace=True)
+    df_bulkstock.index = pd.to_datetime(df_bulkstock.index)
     df_bulkstock = pd.Series(df_bulkstock['close'], name='BulkStock')
 
     df = df.join(df_bulkstock)
 
     # 补全缺失值
     df['BulkStock'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['BulkStock'] = df[['BulkStock']].apply(data_normalization)
 
 
 def add_industrialproducts(inp_file):
@@ -248,19 +258,20 @@ def add_industrialproducts(inp_file):
     global df
 
     try:
-        df_industrialproducts = pd.read_csv(inp_file)
+        df_industrialproducts = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_industrialproducts['trade_date'] = pd.to_datetime(df_industrialproducts['trade_date'])
-    df_industrialproducts.set_index('trade_date', inplace=True)
+    df_industrialproducts.index = pd.to_datetime(df_industrialproducts.index)
     df_industrialproducts = pd.Series(df_industrialproducts['close'], name='IndustrialProducts')
 
     df = df.join(df_industrialproducts)
 
     # 补全缺失值
     df['IndustrialProducts'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['IndustrialProducts'] = df[['IndustrialProducts']].apply(data_normalization)
 
 
 def add_sp500(inp_file):
@@ -270,19 +281,20 @@ def add_sp500(inp_file):
     global df
 
     try:
-        df_sp500 = pd.read_csv(inp_file)
+        df_sp500 = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_sp500['trade_date'] = pd.to_datetime(df_sp500['trade_date'])
-    df_sp500.set_index('trade_date', inplace=True)
+    df_sp500.index = pd.to_datetime(df_sp500.index)
     df_sp500 = pd.Series(df_sp500['close'], name='SP500')
 
     df = df.join(df_sp500)
 
     # 补全缺失值
     df['SP500'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['SP500'] = df[['SP500']].apply(data_normalization)
 
 
 def add_dji(inp_file):
@@ -292,19 +304,20 @@ def add_dji(inp_file):
     global df
 
     try:
-        df_dji = pd.read_csv(inp_file)
+        df_dji = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_dji['trade_date'] = pd.to_datetime(df_dji['trade_date'])
-    df_dji.set_index('trade_date', inplace=True)
+    df_dji.index = pd.to_datetime(df_dji.index)
     df_dji = pd.Series(df_dji['close'], name='DJI')
 
     df = df.join(df_dji)
 
     # 补全缺失值
     df['DJI'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['DJI'] = df[['DJI']].apply(data_normalization)
 
 
 def add_ixic(inp_file):
@@ -314,19 +327,20 @@ def add_ixic(inp_file):
     global df
 
     try:
-        df_ixic = pd.read_csv(inp_file)
+        df_ixic = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_ixic['trade_date'] = pd.to_datetime(df_ixic['trade_date'])
-    df_ixic.set_index('trade_date', inplace=True)
+    df_ixic.index = pd.to_datetime(df_ixic.index)
     df_ixic = pd.Series(df_ixic['close'], name='IXIC')
 
     df = df.join(df_ixic)
 
     # 补全缺失值
     df['IXIC'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['IXIC'] = df[['IXIC']].apply(data_normalization)
 
 
 def add_gdaxi(inp_file):
@@ -336,19 +350,20 @@ def add_gdaxi(inp_file):
     global df
 
     try:
-        df_gdaxi = pd.read_csv(inp_file)
+        df_gdaxi = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_gdaxi['trade_date'] = pd.to_datetime(df_gdaxi['trade_date'])
-    df_gdaxi.set_index('trade_date', inplace=True)
+    df_gdaxi.index = pd.to_datetime(df_gdaxi.index)
     df_gdaxi = pd.Series(df_gdaxi['close'], name='GDAXI')
 
     df = df.join(df_gdaxi)
 
     # 补全缺失值
     df['GDAXI'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['GDAXI'] = df[['GDAXI']].apply(data_normalization)
 
 
 def add_ftse(inp_file):
@@ -358,19 +373,20 @@ def add_ftse(inp_file):
     global df
 
     try:
-        df_fise = pd.read_csv(inp_file)
+        df_fise = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_fise['trade_date'] = pd.to_datetime(df_fise['trade_date'])
-    df_fise.set_index('trade_date', inplace=True)
+    df_fise.index = pd.to_datetime(df_fise.index)
     df_fise = pd.Series(df_fise['close'], name='FTSE')
 
     df = df.join(df_fise)
 
     # 补全缺失值
     df['FTSE'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['FTSE'] = df[['FTSE']].apply(data_normalization)
 
 
 def add_fchi(inp_file):
@@ -380,19 +396,20 @@ def add_fchi(inp_file):
     global df
 
     try:
-        df_fchi = pd.read_csv(inp_file)
+        df_fchi = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_fchi['trade_date'] = pd.to_datetime(df_fchi['trade_date'])
-    df_fchi.set_index('trade_date', inplace=True)
+    df_fchi.index = pd.to_datetime(df_fchi.index)
     df_fchi = pd.Series(df_fchi['close'], name='FCHI')
 
     df = df.join(df_fchi)
 
     # 补全缺失值
     df['FCHI'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['FCHI'] = df[['FCHI']].apply(data_normalization)
 
 
 def add_n225(inp_file):
@@ -402,19 +419,20 @@ def add_n225(inp_file):
     global df
 
     try:
-        df_n225 = pd.read_csv(inp_file)
+        df_n225 = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_n225['trade_date'] = pd.to_datetime(df_n225['trade_date'])
-    df_n225.set_index('trade_date', inplace=True)
+    df_n225.index = pd.to_datetime(df_n225.index)
     df_n225 = pd.Series(df_n225['close'], name='N225')
 
     df = df.join(df_n225)
 
     # 补全缺失值
     df['N225'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['N225'] = df[['N225']].apply(data_normalization)
 
 
 def add_hsi(inp_file):
@@ -424,19 +442,20 @@ def add_hsi(inp_file):
     global df
 
     try:
-        df_hsi = pd.read_csv(inp_file)
+        df_hsi = pd.read_csv(inp_file, index_col='trade_date')
         print('\n基础数据文件 %s 已经读取！' % inp_file)
     except Exception as err:
         print('\n读取文件时出现问题：%s' % str(err))
 
-    df_hsi['trade_date'] = pd.to_datetime(df_hsi['trade_date'])
-    df_hsi.set_index('trade_date', inplace=True)
+    df_hsi.index = pd.to_datetime(df_hsi.index)
     df_hsi = pd.Series(df_hsi['close'], name='HSI')
 
     df = df.join(df_hsi)
 
     # 补全缺失值
     df['HSI'].fillna(method='ffill', inplace=True)
+    # 归一化处理
+    df['HSI'] = df[['HSI']].apply(data_normalization)
 
 
 def BBANDS(inp_ndays):
@@ -457,6 +476,10 @@ def BBANDS(inp_ndays):
 
     df = df.join(lower_BB)
 
+    # 归一化处理
+    df['Upper_BollingerBand'] = df[['Upper_BollingerBand']].apply(data_normalization)
+    df['Lower_BollingerBand'] = df[['Lower_BollingerBand']].apply(data_normalization)
+
 
 def CCI(inp_ndays):
     """
@@ -469,6 +492,9 @@ def CCI(inp_ndays):
                     / (0.015 * typical_price.rolling(inp_ndays).std()), name='CCI')
 
     df = df.join(CCI)
+
+    # 归一化处理
+    df['CCI'] = df[['CCI']].apply(data_normalization)
 
 
 def EVM(inp_ndays):
@@ -485,6 +511,9 @@ def EVM(inp_ndays):
 
     df = df.join(EVM_MA)
 
+    # 归一化处理
+    df['EVM'] = df[['EVM']].apply(data_normalization)
+
 
 def ROC(inp_ndays):
     """
@@ -499,6 +528,9 @@ def ROC(inp_ndays):
 
     df = df.join(ROC)
 
+    # 归一化处理
+    df['ROC'] = df[['ROC']].apply(data_normalization)
+
 
 def ForceIndex(inp_ndays):
     """
@@ -510,11 +542,154 @@ def ForceIndex(inp_ndays):
 
     df = df.join(FI)
 
+    # 归一化处理
+    df['ForceIndex'] = df[['ForceIndex']].apply(data_normalization)
+
+
+def KDJ(inp_N, inp_M1, inp_M2):
+    """
+    计算KDJ——随机指标
+    """
+    global df
+
+    close = df.close
+    high = df.high
+    low = df.low
+    date = df.index.to_series()
+    ndate = len(date)
+    periodHigh = pd.Series(np.zeros(ndate-(inp_N-1)),
+                           index=date.index[(inp_N-1):], name='periodHigh')
+    periodLow = pd.Series(np.zeros(ndate-(inp_N-1)),
+                          index=date.index[(inp_N-1):], name='periodLow')
+    RSV = pd.Series(np.zeros(ndate-(inp_N-1)),
+                    index=date.index[(inp_N-1):], name='RSV')
+
+    for i in range(inp_N-1, ndate):
+        period = date[i-(inp_N-1):i+1]
+        j = date[i]
+        periodHigh[j] = high[period].max()
+        periodLow[j] = low[period].min()
+        RSV[j] = 100 * (close[j] - periodLow[j]) / (periodHigh[j] - periodLow[j])
+
+    KValue = pd.Series(0.0, index=RSV.index, name='KValue')
+    KValue[0] = 50
+    for i in range(1, len(RSV)):
+        KValue[i] = (inp_M1 - 1) / inp_M1 * KValue[i-1] + RSV[i] / inp_M1
+
+    DValue = pd.Series(0.0, index=RSV.index, name='DValue')
+    DValue[0] = 50
+    for i in range(1, len(RSV)):
+        DValue[i] = (inp_M2 - 1) / inp_M2 * DValue[i-1] + KValue[i] / inp_M2
+
+    JValue = 3 * KValue - 2 * DValue
+    JValue.name = 'JValue'
+
+    df = df.join(KValue)
+    df = df.join(DValue)
+    df = df.join(JValue)
+
+    # 归一化处理
+    df['KValue'] = df[['KValue']].apply(data_normalization)
+    df['DValue'] = df[['DValue']].apply(data_normalization)
+    df['JValue'] = df[['JValue']].apply(data_normalization)
+
+
+def SMA(inp_ndays):
+    """
+    计算SMA——简单移动平均线指标
+    """
+    global df
+
+    ma_name = 'SMA_' + str(inp_ndays)
+    SMA = pd.Series(df['close'].rolling(inp_ndays).mean(), name=ma_name)
+
+    df = df.join(SMA)
+
+    # 归一化处理
+    df[ma_name] = df[[ma_name]].apply(data_normalization)
+
+
+def RSI(inp_days):
+    """
+    计算RSI——相对强弱指标
+    """
+    global df
+
+    date = df.index.to_series()
+    ndate = len(date)
+    RSI = pd.Series(np.zeros(ndate-inp_days),
+                    index=date.index[inp_days:], name='RSI')
+
+    for i in range(inp_days, ndate):
+        A = 0
+        B = 0
+        for j in range(0, inp_days):
+            if df['amt_change'][date[i-j]] > 0:
+                A += df['amt_change'][date[i-j]]
+            else:
+                B += df['amt_change'][date[i-j]]
+
+        RSI[date[i]] = A / (A - B) * 100
+
+    df = df.join(RSI)
+    # 归一化处理
+    df['RSI'] = df[['RSI']].apply(data_normalization)
+
+
+def PRICE_TARGET(x):
+    """
+    按照涨跌幅大小进行涨跌幅度的分级
+    """
+    if x > 1.8:
+        return 'A'
+    elif x > 0.3 and x <= 1.8:
+        return 'B'
+    elif x > -0.3 and x <= 0.3:
+        return 'C'
+    elif x > -1.46 and x <= -0.3:
+        return 'D'
+    elif x < -1.46:
+        return 'E'
+    else:
+        return np.nan
+
+
+def next_pctchange(inp_ndays):
+    """
+    统计之后N个交易日的涨跌幅指标
+    """
+    global df
+
+    CLOSE_SELF = pd.Series(df['close'], name='close_self')
+    df = df.join(CLOSE_SELF)
+
+    AMT_CHANGE = pd.Series(df['close'] - df['close'].shift(1),
+                           name='amt_change')
+    df = df.join(AMT_CHANGE)
+
+    PCT_CHANGE = pd.Series(100 * (df['close']-df['close'].shift(1))
+                           / df['close'].shift(1), name='pct_change')
+    df = df.join(PCT_CHANGE)
+
+    NEXT = pd.Series(df['pct_change'].shift(-inp_ndays), name='next_pctchange')
+    df = df.join(NEXT)
+
+    TARGET = pd.Series(df['next_pctchange'], name='price_target')
+    TARGET = TARGET.apply(PRICE_TARGET)
+    df = df.join(TARGET)
+
+    # 归一化处理
+    df['close_self'] = df[['close_self']].apply(data_normalization)
+    df['pct_change'] = df[['pct_change']].apply(data_normalization)
+
 
 if __name__ == "__main__":
     global df
     # 读取沪深300股票指数的价格数据
     get_stock_index_data(source_file)
+
+    # 生成目标数据，即预测今后N天的涨跌，按照涨跌幅大小进行涨跌幅度的分级
+    next_pctchange(1)
 
     # 添加国际金融市场的价格数据
     add_usdx(usdx_file)
@@ -537,12 +712,17 @@ if __name__ == "__main__":
     add_hsi(hsi_file)
 
     # 添加技术分析指标特征数据
+    SMA(5)
+    SMA(20)
+    SMA(50)
+    SMA(200)
     BBANDS(20)
     CCI(20)
     EVM(14)
     ForceIndex(1)
     ROC(5)
-
+    KDJ(9, 3, 3)
+    RSI(6)
 
     # 删除空值行
     # df = df.dropna()
