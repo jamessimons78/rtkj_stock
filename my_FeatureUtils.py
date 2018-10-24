@@ -28,9 +28,6 @@ hsi_file = file_path + 'HSI.csv'
 
 global df
 
-# 数据归一化处理
-data_normalization = lambda x : (x - np.min(x)) / (np.max(x) - np.min(x))
-
 def get_stock_index_data(inp_file):
     """
     从csv文件读取沪深300股票指数数据
@@ -63,8 +60,6 @@ def add_usdx(inp_file):
 
     # 补全缺失值
     df['USDX'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['USDX'] = df[['USDX']].apply(data_normalization)
 
 
 def add_usdcny(inp_file):
@@ -86,8 +81,6 @@ def add_usdcny(inp_file):
 
     # 补全缺失值
     df['USDCNY'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['USDCNY'] = df[['USDCNY']].apply(data_normalization)
 
 
 def add_usdjpy(inp_file):
@@ -109,8 +102,6 @@ def add_usdjpy(inp_file):
 
     # 补全缺失值
     df['USDJPY'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['USDJPY'] = df[['USDJPY']].apply(data_normalization)
 
 
 def add_audusd(inp_file):
@@ -132,8 +123,6 @@ def add_audusd(inp_file):
 
     # 补全缺失值
     df['AUDUSD'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['AUDUSD'] = df[['AUDUSD']].apply(data_normalization)
 
 
 def add_eurusd(inp_file):
@@ -155,8 +144,6 @@ def add_eurusd(inp_file):
 
     # 补全缺失值
     df['EURUSD'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['EURUSD'] = df[['EURUSD']].apply(data_normalization)
 
 
 def add_gbpusd(inp_file):
@@ -178,8 +165,6 @@ def add_gbpusd(inp_file):
 
     # 补全缺失值
     df['GBPUSD'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['GBPUSD'] = df[['GBPUSD']].apply(data_normalization)
 
 
 def add_xauusd(inp_file):
@@ -201,8 +186,6 @@ def add_xauusd(inp_file):
 
     # 补全缺失值
     df['XAUUSD'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['XAUUSD'] = df[['XAUUSD']].apply(data_normalization)
 
 
 def add_xagusd(inp_file):
@@ -224,8 +207,6 @@ def add_xagusd(inp_file):
 
     # 补全缺失值
     df['XAGUSD'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['XAGUSD'] = df[['XAGUSD']].apply(data_normalization)
 
 
 def add_bulkstock(inp_file):
@@ -247,8 +228,6 @@ def add_bulkstock(inp_file):
 
     # 补全缺失值
     df['BulkStock'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['BulkStock'] = df[['BulkStock']].apply(data_normalization)
 
 
 def add_industrialproducts(inp_file):
@@ -270,8 +249,6 @@ def add_industrialproducts(inp_file):
 
     # 补全缺失值
     df['IndustrialProducts'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['IndustrialProducts'] = df[['IndustrialProducts']].apply(data_normalization)
 
 
 def add_sp500(inp_file):
@@ -293,8 +270,6 @@ def add_sp500(inp_file):
 
     # 补全缺失值
     df['SP500'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['SP500'] = df[['SP500']].apply(data_normalization)
 
 
 def add_dji(inp_file):
@@ -316,8 +291,6 @@ def add_dji(inp_file):
 
     # 补全缺失值
     df['DJI'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['DJI'] = df[['DJI']].apply(data_normalization)
 
 
 def add_ixic(inp_file):
@@ -339,8 +312,6 @@ def add_ixic(inp_file):
 
     # 补全缺失值
     df['IXIC'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['IXIC'] = df[['IXIC']].apply(data_normalization)
 
 
 def add_gdaxi(inp_file):
@@ -362,8 +333,6 @@ def add_gdaxi(inp_file):
 
     # 补全缺失值
     df['GDAXI'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['GDAXI'] = df[['GDAXI']].apply(data_normalization)
 
 
 def add_ftse(inp_file):
@@ -385,8 +354,6 @@ def add_ftse(inp_file):
 
     # 补全缺失值
     df['FTSE'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['FTSE'] = df[['FTSE']].apply(data_normalization)
 
 
 def add_fchi(inp_file):
@@ -408,8 +375,6 @@ def add_fchi(inp_file):
 
     # 补全缺失值
     df['FCHI'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['FCHI'] = df[['FCHI']].apply(data_normalization)
 
 
 def add_n225(inp_file):
@@ -431,8 +396,6 @@ def add_n225(inp_file):
 
     # 补全缺失值
     df['N225'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['N225'] = df[['N225']].apply(data_normalization)
 
 
 def add_hsi(inp_file):
@@ -454,8 +417,6 @@ def add_hsi(inp_file):
 
     # 补全缺失值
     df['HSI'].fillna(method='ffill', inplace=True)
-    # 归一化处理
-    df['HSI'] = df[['HSI']].apply(data_normalization)
 
 
 def BBANDS(inp_ndays):
@@ -476,10 +437,6 @@ def BBANDS(inp_ndays):
 
     df = df.join(lower_BB)
 
-    # 归一化处理
-    df['Upper_BollingerBand'] = df[['Upper_BollingerBand']].apply(data_normalization)
-    df['Lower_BollingerBand'] = df[['Lower_BollingerBand']].apply(data_normalization)
-
 
 def CCI(inp_ndays):
     """
@@ -493,26 +450,20 @@ def CCI(inp_ndays):
 
     df = df.join(CCI)
 
-    # 归一化处理
-    df['CCI'] = df[['CCI']].apply(data_normalization)
 
-
-def EVM(inp_ndays):
+def EMV(inp_ndays):
     """
-    计算EVM指标
+    计算EMV指标
     """
     global df
 
     dm = ((df['high'] + df['low']) / 2) - \
          ((df['high'].shift(1) + df['low'].shift(1)) / 2)
     br = (df['vol'] / 100000000) / (df['high'] - df['low'])
-    EVM = dm / br
-    EVM_MA = pd.Series(EVM.rolling(inp_ndays).mean(), name='EVM')
+    EMV = dm / br
+    EMV_MA = pd.Series(EMV.rolling(inp_ndays).mean(), name='EMV')
 
-    df = df.join(EVM_MA)
-
-    # 归一化处理
-    df['EVM'] = df[['EVM']].apply(data_normalization)
+    df = df.join(EMV_MA)
 
 
 def ROC(inp_ndays):
@@ -528,9 +479,6 @@ def ROC(inp_ndays):
 
     df = df.join(ROC)
 
-    # 归一化处理
-    df['ROC'] = df[['ROC']].apply(data_normalization)
-
 
 def ForceIndex(inp_ndays):
     """
@@ -541,9 +489,6 @@ def ForceIndex(inp_ndays):
     FI = pd.Series(df['close'].diff(inp_ndays) * df['vol'], name='ForceIndex')
 
     df = df.join(FI)
-
-    # 归一化处理
-    df['ForceIndex'] = df[['ForceIndex']].apply(data_normalization)
 
 
 def KDJ(inp_N, inp_M1, inp_M2):
@@ -588,11 +533,6 @@ def KDJ(inp_N, inp_M1, inp_M2):
     df = df.join(DValue)
     df = df.join(JValue)
 
-    # 归一化处理
-    df['KValue'] = df[['KValue']].apply(data_normalization)
-    df['DValue'] = df[['DValue']].apply(data_normalization)
-    df['JValue'] = df[['JValue']].apply(data_normalization)
-
 
 def SMA(inp_ndays):
     """
@@ -605,8 +545,17 @@ def SMA(inp_ndays):
 
     df = df.join(SMA)
 
-    # 归一化处理
-    df[ma_name] = df[[ma_name]].apply(data_normalization)
+
+def EMA(inp_ndays):
+    """
+    计算EMA——指数移动平均线指标
+    """
+    global df
+
+    ma_name = 'EMA_' + str(inp_ndays)
+    EMA = pd.Series(df['close'].ewm(inp_ndays).mean(), name=ma_name)
+
+    df = df.join(EMA)
 
 
 def RSI(inp_days):
@@ -632,14 +581,32 @@ def RSI(inp_days):
         RSI[date[i]] = A / (A - B) * 100
 
     df = df.join(RSI)
-    # 归一化处理
-    df['RSI'] = df[['RSI']].apply(data_normalization)
 
 
-def PRICE_TARGET(x):
+def OBV():
+    """
+    计算OBV——能量潮指标
+    """
+    global df
+
+    date = df.index.to_series()
+    ndate = len(date)
+    OBV = pd.Series(np.zeros(ndate),
+                    index=date.index, name='OBV')
+
+    OBV[date[0]] = df['vol'][date[0]] / 100000000
+    for i in range(1, ndate):
+        if df['close'][date[i]] > df['close'][date[i-1]]:
+            OBV[date[i]] = (OBV[date[i-1]] + df['vol'][date[i]]) / 100000000
+        else:
+            OBV[date[i]] = (OBV[date[i-1]] - df['vol'][date[i]]) / 100000000
+
+    df = df.join(OBV)
+
+
+def _TARGET(x):
     """
     按照涨跌幅大小进行涨跌幅度的分级
-    """
     if x > 1.8:
         return 'A'
     elif x > 0.3 and x <= 1.8:
@@ -652,6 +619,13 @@ def PRICE_TARGET(x):
         return 'E'
     else:
         return np.nan
+    """
+    if x >= 0.03:
+        return 1
+    elif x < 0.03:
+        return -1
+    else:
+        return np.nan
 
 
 def next_pctchange(inp_ndays):
@@ -660,27 +634,51 @@ def next_pctchange(inp_ndays):
     """
     global df
 
-    CLOSE_SELF = pd.Series(df['close'], name='close_self')
-    df = df.join(CLOSE_SELF)
-
+    # 当天涨跌点数
     AMT_CHANGE = pd.Series(df['close'] - df['close'].shift(1),
                            name='amt_change')
     df = df.join(AMT_CHANGE)
 
+    # 当天涨跌幅(%)
     PCT_CHANGE = pd.Series(100 * (df['close']-df['close'].shift(1))
                            / df['close'].shift(1), name='pct_change')
     df = df.join(PCT_CHANGE)
 
+    # 第二天的涨跌幅度(%)
     NEXT = pd.Series(df['pct_change'].shift(-inp_ndays), name='next_pctchange')
     df = df.join(NEXT)
 
-    TARGET = pd.Series(df['next_pctchange'], name='price_target')
-    TARGET = TARGET.apply(PRICE_TARGET)
+    # 要预测的价格目标（第二天的收盘价）
+    PRICE_TARGET = pd.Series(df['close'].shift(-1), name='price_target')
+    df = df.join(PRICE_TARGET)
+
+    # 要预测的第二天的涨跌
+    TARGET = pd.Series(df['next_pctchange'], name='target')
+    TARGET = TARGET.apply(_TARGET)
     df = df.join(TARGET)
 
-    # 归一化处理
-    df['close_self'] = df[['close_self']].apply(data_normalization)
-    df['pct_change'] = df[['pct_change']].apply(data_normalization)
+    # 当天的收盘价
+    CLOSE_SELF = pd.Series(df['close'], name='close_self')
+    df = df.join(CLOSE_SELF)
+
+
+def DATA_NORMAL():
+    """
+    数据归一化处理
+    """
+    global df
+
+    cols = pd.Series.tolist(df.columns)
+    # 排除特征数据中不需要进行归一化处理的列
+    exclude_cols = ['open', 'high', 'low', 'close', 'vol', 'amt_change',
+                    'pct_change', 'next_pctchange', 'price_target', 'target']
+    for col in exclude_cols:
+        cols.remove(col)
+
+    # 数据归一化处理
+    for col in cols:
+        df[col] = df[[col]].apply(lambda x :
+                                  (x - np.min(x)) / (np.max(x) - np.min(x)))
 
 
 if __name__ == "__main__":
@@ -715,21 +713,25 @@ if __name__ == "__main__":
     SMA(5)
     SMA(20)
     SMA(50)
-    SMA(200)
+    EMA(200)
     BBANDS(20)
     CCI(20)
-    EVM(14)
+    EMV(14)
     ForceIndex(1)
     ROC(5)
     KDJ(9, 3, 3)
     RSI(6)
+    OBV()
+
+    # 数据归一化处理
+    DATA_NORMAL()
 
     # 删除空值行
-    # df = df.dropna()
+    df.dropna(inplace=True)
+    df['target'] = df['target'].astype(int)
 
     try:
         df.to_csv(target_file)
         print('\n新的特征数据文件 %s 已经生成！' % target_file)
     except Exception as err:
         print('\n新的特征数据文件存储时出现问题：%s' % str(err))
-
