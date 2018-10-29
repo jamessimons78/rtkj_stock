@@ -3,10 +3,10 @@ import sys
 import time
 from PyQt5.QtCore import (Qt, QTimer)
 from PyQt5.QtGui import (QIcon, QFont)
-from PyQt5.QtWidgets import (QMainWindow, QAction, QDesktopWidget, QApplication,
+from PyQt5.QtWidgets import (QMainWindow, QAction, QApplication,
                              QInputDialog, QToolTip, QPushButton, QMessageBox,
-                             QCheckBox, QComboBox, QLabel, QDesktopWidget,
-                             QLCDNumber)
+                             QCheckBox, QComboBox, QLabel, QDesktopWidget, qApp,
+                             QLCDNumber, QRadioButton)
 
 
 class Wind(QMainWindow):
@@ -27,17 +27,27 @@ class Wind(QMainWindow):
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.center()
         self.setWindowTitle('交易助手')
-        self.setWindowIcon(QIcon('Icon.jpg'))
+        self.setWindowIcon(QIcon('myIcon.ico'))
         QToolTip.setFont(QFont('微软雅黑', 10))
-
-        exitAction = QAction(QIcon('setting.png'), '设置交易环境', self)
-        exitAction.setShortcut('Ctrl+P')
-        exitAction.setStatusTip('设置交易环境')
-        exitAction.triggered.connect(self.setting_environment)
 
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('设置')
-        fileMenu.addAction(exitAction)
+
+        settingAct = QAction(QIcon('setting.png'), '设置交易环境', self)
+        settingAct.setShortcut('Ctrl+P')
+        settingAct.triggered.connect(self.setting_environment)
+
+        aboutAct = QAction(QIcon('contact.png'), '联系我们', self)
+        aboutAct.setShortcut('Ctrl+A')
+        aboutAct.triggered.connect(self.about)
+
+        exitAct = QAction(QIcon('exit.png'), '退出', self)
+        exitAct.setShortcut('Ctrl+Q')
+        exitAct.triggered.connect(qApp.quit)
+
+        fileMenu.addAction(settingAct)
+        fileMenu.addAction(aboutAct)
+        fileMenu.addAction(exitAct)
 
         self.lcd = QLCDNumber(self)
         self.lcd.setDigitCount(5)
@@ -50,12 +60,12 @@ class Wind(QMainWindow):
         symbols = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY']
 
         lab1 = QLabel('交易品种 (1)', self)
-        lab1.move(20, 75)
+        lab1.move(20, 72)
 
         self.combo1 = QComboBox(self)
         for symbol in symbols:
             self.combo1.addItem(symbol)
-        self.combo1.move(20, 105)
+        self.combo1.move(20, 102)
 
         self.cb_buy1 = QCheckBox('做多', self)
         self.cb_buy1.move(140, 75)
@@ -80,13 +90,13 @@ class Wind(QMainWindow):
         btn_close1.clicked.connect(self.btn_close1_Clicked)
 
         lab2 = QLabel('交易品种 (2)', self)
-        lab2.move(20, 260)
+        lab2.move(20, 257)
 
         self.combo2 = QComboBox(self)
         for symbol in symbols:
             self.combo2.addItem(symbol)
         self.combo2.setCurrentText(self.combo2.itemText(1))
-        self.combo2.move(20, 290)
+        self.combo2.move(20, 287)
 
         self.cb_buy2 = QCheckBox('做多', self)
         self.cb_buy2.move(140, 260)
@@ -109,6 +119,16 @@ class Wind(QMainWindow):
         btn_close2.resize(85, 25)
         btn_close2.move(200, 290)
         btn_close2.clicked.connect(self.btn_close2_Clicked)
+
+        lbl3 = QLabel('单笔止损：%', self)
+        lbl3.move(20, 335)
+        self.rb11 = QRadioButton('0.5', self)
+        self.rb11.move(115, 335)
+        self.rb11.setChecked(True)
+        self.rb12 = QRadioButton('1.0', self)
+        self.rb12.move(175, 335)
+        self.rb13 = QRadioButton('2.0', self)
+        self.rb13.move(235, 335)
 
         self.show()
 
@@ -138,6 +158,13 @@ class Wind(QMainWindow):
             event.accept()
         else:
             event.ignore()
+
+    def about(self):
+        """
+        关于菜单
+        """
+        QMessageBox.information(self, '联系我们!',
+                                self.tr('微信：zyhj518，手机：13770675275。'))
 
     def setting_environment(self):
         """
@@ -176,6 +203,10 @@ class Wind(QMainWindow):
                 signal_text += 'BUY'
             if self.cb_sell1.isChecked():
                 signal_text += 'SELL'
+            if self.rb12.isChecked():
+                signal_text += '1'
+            elif self.rb13.isChecked():
+                signal_text += '2'
 
             my_send_signal(signal_text)
 
@@ -209,6 +240,10 @@ class Wind(QMainWindow):
                 signal_text += 'BUY'
             if self.cb_sell2.isChecked():
                 signal_text += 'SELL'
+            if self.rb12.isChecked():
+                signal_text += '1'
+            elif self.rb13.isChecked():
+                signal_text += '2'
 
             my_send_signal(signal_text)
 
