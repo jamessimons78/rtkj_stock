@@ -1,16 +1,19 @@
 import os
 import sys
 import time
+import configparser
 from PyQt5.QtCore import (Qt, QTimer)
 from PyQt5.QtGui import (QIcon, QFont)
-from PyQt5.QtWidgets import (QMainWindow, QAction, QApplication,
-                             QInputDialog, QToolTip, QPushButton, QMessageBox,
-                             QCheckBox, QComboBox, QLabel, QDesktopWidget, qApp,
-                             QLCDNumber, QRadioButton)
+from PyQt5.QtWidgets import (QMainWindow, QAction, QApplication, QDesktopWidget,
+                             QLineEdit, QToolTip, QPushButton, QRadioButton,
+                             QCheckBox, QComboBox, QLabel, qApp, QLCDNumber,
+                             QMessageBox, QDialog)
 
 
-class Wind(QMainWindow):
-
+class CWind(QMainWindow):
+    """
+    主窗口
+    """
     def __init__(self):
         super().__init__()
         self.initUI()
@@ -19,8 +22,6 @@ class Wind(QMainWindow):
         rec_text = cur_time() + ' 开启交易助手！'
         self.statusBar().showMessage(rec_text)
         my_operating_record(rec_text)
-        if os.path.isfile('setting.ini') == False:
-            self.setting_environment()
 
     def initUI(self):
         self.setFixedSize(300, 400)
@@ -30,12 +31,12 @@ class Wind(QMainWindow):
         self.setWindowIcon(QIcon('myIcon.ico'))
         QToolTip.setFont(QFont('微软雅黑', 10))
 
+        # 以下设置菜单
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('设置')
 
-        settingAct = QAction(QIcon('setting.png'), '设置交易环境', self)
-        settingAct.setShortcut('Ctrl+P')
-        settingAct.triggered.connect(self.setting_environment)
+        self.settingAct = QAction(QIcon('setting.png'), '设置交易环境', self)
+        self.settingAct.setShortcut('Ctrl+P')
 
         aboutAct = QAction(QIcon('contact.png'), '联系我们', self)
         aboutAct.setShortcut('Ctrl+A')
@@ -45,10 +46,11 @@ class Wind(QMainWindow):
         exitAct.setShortcut('Ctrl+Q')
         exitAct.triggered.connect(qApp.quit)
 
-        fileMenu.addAction(settingAct)
+        fileMenu.addAction(self.settingAct)
         fileMenu.addAction(aboutAct)
         fileMenu.addAction(exitAct)
 
+        # LCD时钟
         self.lcd = QLCDNumber(self)
         self.lcd.setDigitCount(5)
         self.lcd.setMode(QLCDNumber.Dec)
@@ -56,6 +58,8 @@ class Wind(QMainWindow):
         self.lcd.display(time.strftime("%X", time.localtime()))
         self.lcd.resize(200, 66)
         self.lcd.move(50, 170)
+
+        # 以下布局窗口各个控件
 
         symbols = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY']
 
@@ -95,7 +99,7 @@ class Wind(QMainWindow):
         self.combo2 = QComboBox(self)
         for symbol in symbols:
             self.combo2.addItem(symbol)
-        self.combo2.setCurrentText(self.combo2.itemText(1))
+        self.combo2.setCurrentText(symbols[1])
         self.combo2.move(20, 287)
 
         self.cb_buy2 = QCheckBox('做多', self)
@@ -165,29 +169,6 @@ class Wind(QMainWindow):
         """
         QMessageBox.information(self, '联系我们!',
                                 self.tr('微信：zyhj518，手机：13770675275。'))
-
-    def setting_environment(self):
-        """
-        设置交易环境，可以是本地的MT4的Files文件夹路径，也可以是服务器IP地址加端口
-        """
-        result, ok = QInputDialog.getText(self, '配置环境',
-                                        '输入MT4的Files文件夹路径，或IP地址和端口')
-        result = str(result)
-
-        if ok:
-            if result.find('MetaQuotes') >= 0 or result.find(':') >= 0:
-                with open('setting.ini', 'w') as file_object:
-                    file_object.write(result)
-                rec_text = cur_time() + ' 交易环境已经设置成功！'
-                self.statusBar().showMessage(rec_text)
-                my_operating_record(rec_text)
-            else:
-                QMessageBox.information(self, '错误提示!',
-                                        self.tr('输入的文件夹不对，或IP地址和端口格式不对!'))
-                rec_text = cur_time() + ' 输入的文件夹不对，或IP地址和端口格式不对!！'
-                self.statusBar().showMessage(rec_text)
-                my_operating_record(rec_text)
-
 
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Escape:
@@ -267,6 +248,105 @@ class Wind(QMainWindow):
         my_operating_record(rec_text)
 
 
+class CDialog(QDialog):
+    """
+    配置文件对话框窗口
+    """
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+        self.center()
+
+    def initUI(self):
+        self.setFixedSize(360, 220)
+        self.setWindowTitle('设置交易环境相关变量')
+        self.setWindowIcon(QIcon('myIcon.ico'))
+        self.setWindowFlags(Qt.WindowStaysOnTopHint)
+
+        lbl1 = QLabel('您的MT4账号：', self)
+        lbl1.move(30, 30)
+
+        self.qle_number = QLineEdit(self)
+        self.qle_number.resize(90, 25)
+        self.qle_number.move(140, 25)
+
+        self.rb11 = QRadioButton('在本地交易', self)
+        self.rb11.move(30, 70)
+        self.rb11.setChecked(True)
+        self.rb11.toggled.connect(self.rb_toggled)
+
+        self.rb12 = QRadioButton('在服务器上交易', self)
+        self.rb12.move(160, 70)
+        self.rb12.toggled.connect(self.rb_toggled)
+
+        self.lbl2 = QLabel('在下面输入MT4的Files文件夹路径：', self)
+        self.lbl2.move(30, 105)
+
+        self.qle_directory = QLineEdit(self)
+        self.qle_directory.resize(300, 25)
+        self.qle_directory.move(30, 140)
+
+        btn_save = QPushButton('保存', self)
+        btn_save.move(60, 180)
+        btn_save.clicked.connect(self.save_environment)
+
+        btn_cancel = QPushButton('取消', self)
+        btn_cancel.move(180, 180)
+        btn_cancel.clicked.connect(self.close)
+
+    def rb_toggled(self):
+        if self.rb11.isChecked():
+            self.lbl2.setText('在下面输入MT4的Files文件夹路径：')
+        elif self.rb12.isChecked():
+            self.lbl2.setText('在下面输入服务器的IP地址和端口：')
+
+    def save_environment(self):
+        """
+        设置交易环境，可以是本地的MT4的Files文件夹路径，也可以是服务器IP地址加端口
+        """
+        if len(self.qle_number.text()) > 0 and len(self.qle_directory.text()) > 0:
+            config = configparser.ConfigParser()
+
+            config['MT4'] = {'account_number': self.qle_number.text()}
+
+            if self.rb11.isChecked():
+                cur_mode = 'Local'
+            elif self.rb12.isChecked():
+                cur_mode = 'Network'
+            config['Pathway'] = {'mode': cur_mode}
+
+            dir_str = self.qle_directory.text()
+
+            if cur_mode == 'Local':
+                config['Local'] = {'directory': dir_str}
+
+            elif cur_mode == 'Network':
+                host = dir_str[: dir_str.find(':')]
+                port = dir_str[dir_str.find(':') + 1:]
+                config['Network'] = {'host': host,
+                                     'port': port}
+
+            with open('setting.cfg', 'w') as file_object:
+                config.write(file_object)
+
+        self.close()
+
+    def center(self):
+        screen = QDesktopWidget().screenGeometry()
+        size = self.geometry()
+        self.move((screen.width() - size.width()) / 2 + 85,
+                  (screen.height() - size.height()) - 180)
+
+
+def cur_time():
+    """
+    获取当前时间，返回字符串
+    """
+    now = time.localtime()
+    cur_time = time.strftime('%H:%M:%S', now)
+    return cur_time
+
+
 def my_operating_record(inp_text):
     """
     记录操作日志
@@ -280,41 +360,72 @@ def my_operating_record(inp_text):
 
 
 def my_send_signal(inp_text):
-    # 从配置文件setting.ini中读取MT4路径
-    with open('setting.ini', 'r') as file_object:
-        file_path = file_object.read()
-
+    # 从配置文件setting.cfg中读取MT4路径
     symbols = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY']
     for symbol in symbols:
         if inp_text.find(symbol) >= 0:
             trade_symbol = symbol
 
-    # 检查交易品种的子文件夹是否存在，不存在就新建相应的子文件夹
-    if os.path.exists(file_path + '\\' + trade_symbol) == False:
-        os.mkdir(file_path + '\\' + trade_symbol)
+    config = configparser.ConfigParser()
+    config.read('setting.cfg')
+    res_config = read_config()
+    mode = res_config[1]
 
-    file_path = file_path + '\\' + trade_symbol + '\\'
+    if mode == 'Local':
+        file_path = res_config[2]
+        # 检查交易品种的子文件夹是否存在，不存在就新建相应的子文件夹
+        if os.path.exists(file_path + '\\' + trade_symbol) == False:
+            os.mkdir(file_path + '\\' + trade_symbol)
 
-    # 将指令存到对应的子文件夹里
-    file_name = file_path + 'trade_signal.txt'
+        file_path = file_path + '\\' + trade_symbol + '\\'
 
-    with open(file_name, 'w') as file_object:
-        file_object.write(inp_text)
+        # 将指令存到对应的子文件夹里
+        file_name = file_path + 'trade_signal.txt'
+
+        with open(file_name, 'w') as file_object:
+            file_object.write(inp_text)
+
+    elif mode == 'Network':
+        # account_number = res_config[0]
+        # host = res_config[2]
+        # port = res_config[3]
+
+        # 将交易指令发送到服务器上
+        pass
 
 
-def cur_time():
+def read_config():
     """
-    获取当前时间，返回字符串
+    启动主程序时，读取交易环境的配置文件,返回MT4账户和IP地址或文件夹
     """
-    now = time.localtime()
-    cur_time = time.strftime('%H:%M:%S', now)
-    return cur_time
+    config = configparser.ConfigParser()
+    config.read('setting.cfg')
+
+    account_number = config.get('MT4', 'account_number')
+    mode = config.get('Pathway', 'mode')
+
+    if config.get('Pathway', 'mode') == 'Local':
+        directory = config.get('Local', 'directory')
+        return account_number, mode, directory
+
+    elif config.get('Pathway', 'mode') == 'Network':
+        host = config.get('Network', 'host')
+        port = config.get('Network', 'port')
+        return account_number, mode, host, port
 
 
 if __name__ == '__main__':
 
     app = QApplication(sys.argv)
-    w = Wind()
+    w = CWind()
+    d = CDialog()
+
+    sub_menu = w.settingAct
+    # 打开交易环境配置窗口
+    sub_menu.triggered.connect(d.show)
+
+    if os.path.isfile('setting.cfg') == False:
+        d.show()
 
     sys.exit(app.exec_())
 
