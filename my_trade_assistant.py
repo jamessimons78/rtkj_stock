@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import time
 import configparser
@@ -167,7 +168,7 @@ class CWind(QMainWindow):
         """
         关于菜单
         """
-        QMessageBox.information(self, '联系我们!',
+        QMessageBox.information(self, '联系我们——瑞讯银行智能化交易系统',
                                 self.tr('微信：zyhj518，手机：13770675275。'))
 
     def keyPressEvent(self, e):
@@ -189,7 +190,7 @@ class CWind(QMainWindow):
             elif self.rb13.isChecked():
                 signal_text += '2'
 
-            my_send_signal(signal_text)
+            self.my_send_signal(signal_text)
 
             rec_text = cur_time() + ' 执行' + signal_text + '操作'
             self.statusBar().showMessage(rec_text)
@@ -205,7 +206,7 @@ class CWind(QMainWindow):
         """
         signal_text = self.combo1.currentText() + 'CLOSE'
 
-        my_send_signal(signal_text)
+        self.my_send_signal(signal_text)
         rec_text = cur_time() + ' 执行' + signal_text + '操作'
         self.statusBar().showMessage(rec_text)
         my_operating_record(rec_text)
@@ -226,7 +227,7 @@ class CWind(QMainWindow):
             elif self.rb13.isChecked():
                 signal_text += '2'
 
-            my_send_signal(signal_text)
+            self.my_send_signal(signal_text)
 
             rec_text = cur_time() + ' 执行' + signal_text + '操作'
             self.statusBar().showMessage(rec_text)
@@ -242,10 +243,64 @@ class CWind(QMainWindow):
         """
         signal_text = self.combo2.currentText() + 'CLOSE'
 
-        my_send_signal(signal_text)
+        self.my_send_signal(signal_text)
         rec_text = cur_time() + ' 执行' + signal_text + '操作'
         self.statusBar().showMessage(rec_text)
         my_operating_record(rec_text)
+
+
+    def read_config(self):
+        """
+        启动主程序时，读取交易环境的配置文件,返回MT4账户和IP地址或文件夹
+        """
+        config = configparser.ConfigParser()
+        config.read('setting.cfg')
+
+        account_number = config.get('MT4', 'account_number')
+        mode = config.get('Pathway', 'mode')
+
+        if config.get('Pathway', 'mode') == 'Local':
+            directory = config.get('Local', 'directory')
+            return account_number, mode, directory
+
+        elif config.get('Pathway', 'mode') == 'Network':
+            host = config.get('Network', 'host')
+            port = config.get('Network', 'port')
+            return account_number, mode, host, port
+
+
+    def my_send_signal(self, inp_text):
+        symbols = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY']
+        for symbol in symbols:
+            if inp_text.find(symbol) >= 0:
+                trade_symbol = symbol
+
+        config = configparser.ConfigParser()
+        config.read('setting.cfg')
+        res_config = self.read_config()
+        mode = res_config[1]
+
+        if mode == 'Local':
+            file_path = res_config[2]
+            # 检查交易品种的子文件夹是否存在，不存在就新建相应的子文件夹
+            if os.path.exists(file_path + '\\' + trade_symbol) == False:
+                os.mkdir(file_path + '\\' + trade_symbol)
+
+            file_path = file_path + '\\' + trade_symbol + '\\'
+
+            # 将指令存到对应的子文件夹里
+            file_name = file_path + 'trade_signal.txt'
+
+            with open(file_name, 'w') as file_object:
+                file_object.write(inp_text)
+
+        elif mode == 'Network':
+            # account_number = res_config[0]
+            # host = res_config[2]
+            # port = res_config[3]
+
+            # 将交易指令发送到服务器上
+            pass
 
 
 class CDialog(QDialog):
@@ -287,11 +342,11 @@ class CDialog(QDialog):
         self.qle_directory.move(30, 140)
 
         btn_save = QPushButton('保存', self)
-        btn_save.move(60, 180)
+        btn_save.move(70, 180)
         btn_save.clicked.connect(self.save_environment)
 
         btn_cancel = QPushButton('取消', self)
-        btn_cancel.move(180, 180)
+        btn_cancel.move(200, 180)
         btn_cancel.clicked.connect(self.close)
 
     def rb_toggled(self):
@@ -304,32 +359,71 @@ class CDialog(QDialog):
         """
         设置交易环境，可以是本地的MT4的Files文件夹路径，也可以是服务器IP地址加端口
         """
-        if len(self.qle_number.text()) > 0 and len(self.qle_directory.text()) > 0:
-            config = configparser.ConfigParser()
+        save_yn = True
+        qle_number = self.qle_number.text()
+        qle_directory = self.qle_directory.text()
+        if len(qle_number.split()) > 0 and len(qle_directory.split()) > 0:
 
-            config['MT4'] = {'account_number': self.qle_number.text()}
+            if qle_number.isdigit():
 
-            if self.rb11.isChecked():
-                cur_mode = 'Local'
-            elif self.rb12.isChecked():
-                cur_mode = 'Network'
-            config['Pathway'] = {'mode': cur_mode}
+                config = configparser.ConfigParser()
 
-            dir_str = self.qle_directory.text()
+                config['MT4'] = {'account_number': qle_number}
 
-            if cur_mode == 'Local':
-                config['Local'] = {'directory': dir_str}
+                if self.rb11.isChecked():
+                    cur_mode = 'Local'
+                elif self.rb12.isChecked():
+                    cur_mode = 'Network'
+                config['Pathway'] = {'mode': cur_mode}
 
-            elif cur_mode == 'Network':
-                host = dir_str[: dir_str.find(':')]
-                port = dir_str[dir_str.find(':') + 1:]
-                config['Network'] = {'host': host,
-                                     'port': port}
+                if cur_mode == 'Local':
+                    if qle_directory.find('\MQL4\Files') > 0:
+                        config['Local'] = {'directory': qle_directory}
+                    else:
+                        save_yn = False
+                        QMessageBox.information(self, '错误提示!',
+                                                self.tr('请输入正确的MT4的Files文件夹路径!'))
+
+                elif cur_mode == 'Network':
+                    if self.ip_yn(qle_directory):
+                        host = qle_directory[: qle_directory.find(':')]
+                        port = qle_directory[qle_directory.find(':') + 1:]
+                        config['Network'] = {'host': host,
+                                             'port': port}
+                    else:
+                        save_yn = False
+                        QMessageBox.information(self, '错误提示!',
+                                                self.tr('请输入正确的IP地址和端口号!'))
+            else:
+                save_yn = False
+                QMessageBox.information(self, '错误提示!',
+                                        self.tr('请输入正确的数字账号!'))
+        if save_yn:
 
             with open('setting.cfg', 'w') as file_object:
                 config.write(file_object)
 
-        self.close()
+            rec_text = cur_time() + ' 设置了交易环境'
+            my_operating_record(rec_text)
+            QMessageBox.information(self, '操作提示!',
+                                    self.tr('已经成功设置了交易环境配置文件!'))
+            self.close()
+
+    def ip_yn(self, inp_text):
+        """
+        检查输入的IP地址和端口号是否符合规则
+        格式为：127.0.0.1:2000
+        """
+        res = re.match(
+            r'((?:(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}'
+            r'(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d))))'
+            r'((:2\d{3})|(:[1-9]\d{4}))',
+            inp_text)
+
+        if res:
+            return True
+        else:
+            return False
 
     def center(self):
         screen = QDesktopWidget().screenGeometry()
@@ -359,61 +453,6 @@ def my_operating_record(inp_text):
         file_object.write(rec_text)
 
 
-def my_send_signal(inp_text):
-    # 从配置文件setting.cfg中读取MT4路径
-    symbols = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY']
-    for symbol in symbols:
-        if inp_text.find(symbol) >= 0:
-            trade_symbol = symbol
-
-    config = configparser.ConfigParser()
-    config.read('setting.cfg')
-    res_config = read_config()
-    mode = res_config[1]
-
-    if mode == 'Local':
-        file_path = res_config[2]
-        # 检查交易品种的子文件夹是否存在，不存在就新建相应的子文件夹
-        if os.path.exists(file_path + '\\' + trade_symbol) == False:
-            os.mkdir(file_path + '\\' + trade_symbol)
-
-        file_path = file_path + '\\' + trade_symbol + '\\'
-
-        # 将指令存到对应的子文件夹里
-        file_name = file_path + 'trade_signal.txt'
-
-        with open(file_name, 'w') as file_object:
-            file_object.write(inp_text)
-
-    elif mode == 'Network':
-        # account_number = res_config[0]
-        # host = res_config[2]
-        # port = res_config[3]
-
-        # 将交易指令发送到服务器上
-        pass
-
-
-def read_config():
-    """
-    启动主程序时，读取交易环境的配置文件,返回MT4账户和IP地址或文件夹
-    """
-    config = configparser.ConfigParser()
-    config.read('setting.cfg')
-
-    account_number = config.get('MT4', 'account_number')
-    mode = config.get('Pathway', 'mode')
-
-    if config.get('Pathway', 'mode') == 'Local':
-        directory = config.get('Local', 'directory')
-        return account_number, mode, directory
-
-    elif config.get('Pathway', 'mode') == 'Network':
-        host = config.get('Network', 'host')
-        port = config.get('Network', 'port')
-        return account_number, mode, host, port
-
-
 if __name__ == '__main__':
 
     app = QApplication(sys.argv)
@@ -424,6 +463,7 @@ if __name__ == '__main__':
     # 打开交易环境配置窗口
     sub_menu.triggered.connect(d.show)
 
+    # 若第一次启动，没有配置文件，就打开交易环境配置窗口
     if os.path.isfile('setting.cfg') == False:
         d.show()
 
