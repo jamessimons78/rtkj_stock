@@ -3,8 +3,8 @@ import re
 import sys
 import time
 import configparser
-from PyQt5.QtCore import (Qt, QTimer)
-from PyQt5.QtGui import (QIcon, QFont)
+from PyQt5.QtCore import (Qt, QTimer, QRegExp)
+from PyQt5.QtGui import (QIcon, QFont, QRegExpValidator)
 from PyQt5.QtWidgets import (QMainWindow, QAction, QApplication, QDesktopWidget,
                              QLineEdit, QToolTip, QPushButton, QRadioButton,
                              QCheckBox, QComboBox, QLabel, qApp, QLCDNumber,
@@ -251,7 +251,7 @@ class CWind(QMainWindow):
 
     def read_config(self):
         """
-        启动主程序时，读取交易环境的配置文件,返回MT4账户和IP地址或文件夹
+        读取交易环境的配置文件,返回MT4账户和IP地址或文件夹
         """
         config = configparser.ConfigParser()
         config.read('setting.cfg')
@@ -324,6 +324,8 @@ class CDialog(QDialog):
         self.qle_number = QLineEdit(self)
         self.qle_number.resize(90, 25)
         self.qle_number.move(140, 25)
+        regex = QRegExp(r'^[1-9]\d+$')
+        self.qle_number.setValidator(QRegExpValidator(regex, self))
 
         self.rb11 = QRadioButton('在本地交易', self)
         self.rb11.move(30, 70)
@@ -340,6 +342,8 @@ class CDialog(QDialog):
         self.qle_directory = QLineEdit(self)
         self.qle_directory.resize(300, 25)
         self.qle_directory.move(30, 140)
+        regex1 = QRegExp(r'^[C-Ec-e][\:][\\][A-Za-z0-o\\]+$')
+        self.qle_directory.setValidator(QRegExpValidator(regex1, self))
 
         btn_save = QPushButton('保存', self)
         btn_save.move(70, 180)
@@ -352,8 +356,14 @@ class CDialog(QDialog):
     def rb_toggled(self):
         if self.rb11.isChecked():
             self.lbl2.setText('在下面输入MT4的Files文件夹路径：')
+            regex1 = QRegExp(r'^[C-Ec-e][\:][\\][A-Za-z0-o\\]+$')
+            self.qle_directory.setValidator(QRegExpValidator(regex1, self))
         elif self.rb12.isChecked():
             self.lbl2.setText('在下面输入服务器的IP地址和端口：')
+            regex1 = QRegExp(r'^((?:(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}'
+                             r'(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d))))'
+                             r'((:2\d{3})|(:[1-6]\d{4}))$')
+            self.qle_directory.setValidator(QRegExpValidator(regex1, self))
 
     def save_environment(self):
         """
@@ -364,50 +374,45 @@ class CDialog(QDialog):
         qle_directory = self.qle_directory.text()
         if len(qle_number.split()) > 0 and len(qle_directory.split()) > 0:
 
-            if qle_number.isdigit():
+            config = configparser.ConfigParser()
+            config['MT4'] = {'account_number': qle_number}
 
-                config = configparser.ConfigParser()
+            if self.rb11.isChecked():
+                cur_mode = 'Local'
+            elif self.rb12.isChecked():
+                cur_mode = 'Network'
+            config['Pathway'] = {'mode': cur_mode}
 
-                config['MT4'] = {'account_number': qle_number}
+            if cur_mode == 'Local':
+                if os.path.exists(qle_directory) \
+                        and qle_directory.find('\MQL4\Files') > 0:
+                    config['Local'] = {'directory': qle_directory}
+                else:
+                    save_yn = False
+                    QMessageBox.information(self, '错误提示!',
+                                            self.tr('请输入正确的MT4的Files文件夹路径!'))
 
-                if self.rb11.isChecked():
-                    cur_mode = 'Local'
-                elif self.rb12.isChecked():
-                    cur_mode = 'Network'
-                config['Pathway'] = {'mode': cur_mode}
+            elif cur_mode == 'Network':
+                if self.ip_yn(qle_directory):
+                    host = qle_directory[: qle_directory.find(':')]
+                    port = qle_directory[qle_directory.find(':') + 1:]
+                    config['Network'] = {'host': host,
+                                         'port': port}
+                else:
+                    save_yn = False
+                    QMessageBox.information(self, '错误提示!',
+                                            self.tr('请输入正确的IP地址和端口号!'))
 
-                if cur_mode == 'Local':
-                    if qle_directory.find('\MQL4\Files') > 0:
-                        config['Local'] = {'directory': qle_directory}
-                    else:
-                        save_yn = False
-                        QMessageBox.information(self, '错误提示!',
-                                                self.tr('请输入正确的MT4的Files文件夹路径!'))
+            if save_yn:
+                with open('setting.cfg', 'w') as file_object:
+                    config.write(file_object)
 
-                elif cur_mode == 'Network':
-                    if self.ip_yn(qle_directory):
-                        host = qle_directory[: qle_directory.find(':')]
-                        port = qle_directory[qle_directory.find(':') + 1:]
-                        config['Network'] = {'host': host,
-                                             'port': port}
-                    else:
-                        save_yn = False
-                        QMessageBox.information(self, '错误提示!',
-                                                self.tr('请输入正确的IP地址和端口号!'))
-            else:
-                save_yn = False
-                QMessageBox.information(self, '错误提示!',
-                                        self.tr('请输入正确的数字账号!'))
-        if save_yn:
+                rec_text = cur_time() + ' 设置了交易环境'
+                my_operating_record(rec_text)
+                QMessageBox.information(self, '操作提示!',
+                                        self.tr('已经成功设置了交易环境配置文件!'))
+                self.close()
 
-            with open('setting.cfg', 'w') as file_object:
-                config.write(file_object)
-
-            rec_text = cur_time() + ' 设置了交易环境'
-            my_operating_record(rec_text)
-            QMessageBox.information(self, '操作提示!',
-                                    self.tr('已经成功设置了交易环境配置文件!'))
-            self.close()
 
     def ip_yn(self, inp_text):
         """
@@ -417,7 +422,7 @@ class CDialog(QDialog):
         res = re.match(
             r'((?:(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}'
             r'(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d))))'
-            r'((:2\d{3})|(:[1-9]\d{4}))',
+            r'((:2\d{3})|(:[1-6]\d{4}))',
             inp_text)
 
         if res:
@@ -468,4 +473,3 @@ if __name__ == '__main__':
         d.show()
 
     sys.exit(app.exec_())
-
