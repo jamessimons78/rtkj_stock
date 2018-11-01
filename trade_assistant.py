@@ -3,13 +3,15 @@ import re
 import sys
 import time
 import configparser
-from PyQt5.QtCore import (Qt, QTimer, QRegExp)
+from PyQt5.QtNetwork import QTcpSocket
+from PyQt5.QtCore import (Qt, QTimer, QRegExp, QByteArray, QDataStream, QIODevice)
 from PyQt5.QtGui import (QIcon, QFont, QRegExpValidator)
 from PyQt5.QtWidgets import (QMainWindow, QAction, QApplication, QDesktopWidget,
                              QLineEdit, QToolTip, QPushButton, QRadioButton,
                              QCheckBox, QComboBox, QLabel, qApp, QLCDNumber,
                              QMessageBox, QDialog)
 
+SIZEOF_UINT16 = 2
 
 class CWind(QMainWindow):
     """
@@ -17,17 +19,32 @@ class CWind(QMainWindow):
     """
     def __init__(self):
         super().__init__()
-        self.initUI()
-        self.init_timer()
+        self._initUI()
+        self._init_timer()
 
-        rec_text = cur_time() + ' 开启交易助手！'
+        self.socket = QTcpSocket()
+        self.nextBlockSize = 0
+        self.request = None
+
+        self.socket.connected.connect(self._sendRequest)
+        self.socket.readyRead.connect(self._readResponse)
+        self.socket.disconnected.connect(self._serverHasStopped)
+        self.socket.error.connect(self._serverHasError)
+
+        # 若已经有交易环境配置文件，则打开并读到self.config变量中
+        self.config = ()
+        if os.path.isfile('setting.cfg') == True:
+            self.config = self._read_config()
+
+        # 状态栏显示启动信息，并存入日志文件
+        rec_text = _cur_time() + ' 开启交易助手！'
         self.statusBar().showMessage(rec_text)
-        my_operating_record(rec_text)
+        _operating_record(rec_text)
 
-    def initUI(self):
+    def _initUI(self):
         self.setFixedSize(300, 400)
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
-        self.center()
+        self._center()
         self.setWindowTitle('交易助手')
         self.setWindowIcon(QIcon('myIcon.ico'))
         QToolTip.setFont(QFont('微软雅黑', 10))
@@ -41,7 +58,7 @@ class CWind(QMainWindow):
 
         aboutAct = QAction(QIcon('contact.png'), '联系我们', self)
         aboutAct.setShortcut('Ctrl+A')
-        aboutAct.triggered.connect(self.about)
+        aboutAct.triggered.connect(self._about)
 
         exitAct = QAction(QIcon('exit.png'), '退出', self)
         exitAct.setShortcut('Ctrl+Q')
@@ -86,13 +103,13 @@ class CWind(QMainWindow):
         btn_open1.setToolTip('挂单或者当前市价开仓')
         btn_open1.resize(85, 25)
         btn_open1.move(200, 75)
-        btn_open1.clicked.connect(self.btn_open1_Clicked)
+        btn_open1.clicked.connect(self._btn_open1_Clicked)
 
         btn_close1 = QPushButton('撤单/平仓', self)
         btn_close1.setToolTip('撤销挂单或平掉已有仓位')
         btn_close1.resize(85, 25)
         btn_close1.move(200, 105)
-        btn_close1.clicked.connect(self.btn_close1_Clicked)
+        btn_close1.clicked.connect(self._btn_close1_Clicked)
 
         lab2 = QLabel('交易品种 (2)', self)
         lab2.move(20, 257)
@@ -117,13 +134,13 @@ class CWind(QMainWindow):
         btn_open2.setToolTip('挂单或者当前市价开仓')
         btn_open2.resize(85, 25)
         btn_open2.move(200, 260)
-        btn_open2.clicked.connect(self.btn_open2_Clicked)
+        btn_open2.clicked.connect(self._btn_open2_Clicked)
 
         btn_close2 = QPushButton('撤单/平仓', self)
         btn_close2.setToolTip('撤销挂单或平掉已有仓位')
         btn_close2.resize(85, 25)
         btn_close2.move(200, 290)
-        btn_close2.clicked.connect(self.btn_close2_Clicked)
+        btn_close2.clicked.connect(self._btn_close2_Clicked)
 
         lbl3 = QLabel('单笔止损：%', self)
         lbl3.move(20, 335)
@@ -137,45 +154,46 @@ class CWind(QMainWindow):
 
         self.show()
 
-    def center(self):
-        screen = QDesktopWidget().screenGeometry()
-        size = self.geometry()
-        self.move((screen.width() - size.width()) / 2 + 90,
-                  (screen.height() - size.height() - 90))
-
-    def init_timer(self):
-        self.timer = QTimer()
-        self.timer.setInterval(1000)
-        self.timer.start()
-        self.timer.timeout.connect(self.update_time)
-
-    def update_time(self):
-        self.lcd.display(time.strftime("%X", time.localtime()))
-
     def closeEvent(self, event):
         reply = QMessageBox.question(self, '操作提示！',
                                      '您确定要关闭“交易助手”？',
                                      QMessageBox.Yes | QMessageBox.No,
                                      QMessageBox.No)
         if reply == QMessageBox.Yes:
-            rec_text = cur_time() + ' 关闭交易助手！'
-            my_operating_record(rec_text)
+            self.socket.close()
+            rec_text = _cur_time() + ' 关闭交易助手！'
+            _operating_record(rec_text)
             event.accept()
         else:
             event.ignore()
 
-    def about(self):
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_Escape:
+            self.showMinimized()
+
+    def _center(self):
+        screen = QDesktopWidget().screenGeometry()
+        size = self.geometry()
+        self.move((screen.width() - size.width()) / 2 + 90,
+                  (screen.height() - size.height() - 90))
+
+    def _init_timer(self):
+        self.timer = QTimer()
+        self.timer.setInterval(1000)
+        self.timer.start()
+        self.timer.timeout.connect(self._update_time)
+
+    def _update_time(self):
+        self.lcd.display(time.strftime("%X", time.localtime()))
+
+    def _about(self):
         """
         关于菜单
         """
         QMessageBox.information(self, '联系我们——瑞讯银行智能化交易系统',
                                 self.tr('微信：zyhj518，手机：13770675275。'))
 
-    def keyPressEvent(self, e):
-        if e.key() == Qt.Key_Escape:
-            self.showMinimized()
-
-    def btn_open1_Clicked(self):
+    def _btn_open1_Clicked(self):
         """
         挂单或直接市价开仓操作
         """
@@ -190,29 +208,26 @@ class CWind(QMainWindow):
             elif self.rb13.isChecked():
                 signal_text += '2'
 
-            self.my_send_signal(signal_text)
-
-            rec_text = cur_time() + ' 执行' + signal_text + '操作'
-            self.statusBar().showMessage(rec_text)
-            my_operating_record(rec_text)
+            self._send_signal(signal_text)
+            # rec_text = _cur_time() + ' 执行' + signal_text + '操作'
+            # self.statusBar().showMessage(rec_text)
+            # _operating_record(rec_text)
         else:
             QMessageBox.information(self, '错误提示!',
                                     self.tr('请勾选交易方向后，再开仓!'))
 
-
-    def btn_close1_Clicked(self):
+    def _btn_close1_Clicked(self):
         """
         撤销挂单，或平掉已有仓位
         """
         signal_text = self.combo1.currentText() + 'CLOSE'
 
-        self.my_send_signal(signal_text)
-        rec_text = cur_time() + ' 执行' + signal_text + '操作'
-        self.statusBar().showMessage(rec_text)
-        my_operating_record(rec_text)
+        self._send_signal(signal_text)
+        # rec_text = _cur_time() + ' 执行' + signal_text + '操作'
+        # self.statusBar().showMessage(rec_text)
+        # _operating_record(rec_text)
 
-
-    def btn_open2_Clicked(self):
+    def _btn_open2_Clicked(self):
         """
         挂单或直接市价开仓操作
         """
@@ -227,29 +242,26 @@ class CWind(QMainWindow):
             elif self.rb13.isChecked():
                 signal_text += '2'
 
-            self.my_send_signal(signal_text)
-
-            rec_text = cur_time() + ' 执行' + signal_text + '操作'
-            self.statusBar().showMessage(rec_text)
-            my_operating_record(rec_text)
+            self._send_signal(signal_text)
+            # rec_text = _cur_time() + ' 执行' + signal_text + '操作'
+            # self.statusBar().showMessage(rec_text)
+            # _operating_record(rec_text)
         else:
-            QMessageBox.information(self, '错误提示!',
-                                    self.tr('请勾选交易方向后，再开仓!'))
+            QMessageBox.critical(self, '错误提示!',
+                                 self.tr('请勾选交易方向后，再开仓!'))
 
-
-    def btn_close2_Clicked(self):
+    def _btn_close2_Clicked(self):
         """
         撤销挂单，或平掉已有仓位
         """
         signal_text = self.combo2.currentText() + 'CLOSE'
 
-        self.my_send_signal(signal_text)
-        rec_text = cur_time() + ' 执行' + signal_text + '操作'
-        self.statusBar().showMessage(rec_text)
-        my_operating_record(rec_text)
+        self._send_signal(signal_text)
+        # rec_text = _cur_time() + ' 执行' + signal_text + '操作'
+        # self.statusBar().showMessage(rec_text)
+        # _operating_record(rec_text)
 
-
-    def read_config(self):
+    def _read_config(self):
         """
         读取交易环境的配置文件,返回MT4账户和IP地址或文件夹
         """
@@ -268,20 +280,21 @@ class CWind(QMainWindow):
             port = config.get('Network', 'port')
             return account_number, mode, host, port
 
-
-    def my_send_signal(self, inp_text):
-        symbols = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY']
-        for symbol in symbols:
-            if inp_text.find(symbol) >= 0:
-                trade_symbol = symbol
-
-        config = configparser.ConfigParser()
-        config.read('setting.cfg')
-        res_config = self.read_config()
-        mode = res_config[1]
+    def _send_signal(self, inp_text):
+        """
+        发送交易指令到MT4的Files文件夹，或发送到交易服务器
+        """
+        # 读取配置文件到字典变量
+        if len(self.config) == 0:
+            self.config = self._read_config()
+        mode = self.config[1]
 
         if mode == 'Local':
-            file_path = res_config[2]
+            symbols = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY']
+            for symbol in symbols:
+                if inp_text.find(symbol) >= 0:
+                    trade_symbol = symbol
+            file_path = self.config[2]
             # 检查交易品种的子文件夹是否存在，不存在就新建相应的子文件夹
             if os.path.exists(file_path + '\\' + trade_symbol) == False:
                 os.mkdir(file_path + '\\' + trade_symbol)
@@ -294,13 +307,75 @@ class CWind(QMainWindow):
             with open(file_name, 'w') as file_object:
                 file_object.write(inp_text)
 
+        # 将交易指令传到交易服务器上
         elif mode == 'Network':
-            # account_number = res_config[0]
-            # host = res_config[2]
-            # port = res_config[3]
+            account_number = self.config[0]
+            host = self.config[2]
+            port = int(self.config[3])
 
-            # 将交易指令发送到服务器上
-            pass
+            self.request = QByteArray()
+            stream = QDataStream(self.request, QIODevice.WriteOnly)
+            stream.writeUInt16(0)
+            stream.writeQString(account_number)
+            stream.writeQString(inp_text)
+            stream.device().seek(0)
+            stream.writeUInt16(self.request.size() - SIZEOF_UINT16)
+
+            if self.socket.isOpen():
+                self.socket.close()
+            self.socket.connectToHost(host, port)
+
+            rec_text = _cur_time() + ' 正在连接连接交易服务器{0}...'.format(host)
+            self.statusBar().showMessage(rec_text)
+            _operating_record(rec_text)
+
+    def _sendRequest(self):
+        self.nextBlockSize = 0
+        self.socket.write(self.request)
+        self.request = None
+
+        rec_text = _cur_time() + ' 正在发送您的交易指令...'
+        self.statusBar().showMessage(rec_text)
+        _operating_record(rec_text)
+
+    def _readResponse(self):
+        stream = QDataStream(self.socket)
+
+        while True:
+            if self.nextBlockSize == 0:
+                if self.socket.bytesAvailable() < SIZEOF_UINT16:
+                    break
+                self.nextBlockSize = stream.readUInt16()
+            if self.socket.bytesAvailable() < self.nextBlockSize:
+                break
+
+            ser_reply = stream.readQString()
+
+            if ser_reply == 'None':
+                QMessageBox.critical(self, '错误提示!',
+                                     self.tr('您没有开通服务器交易功能!'))
+                rec_text = _cur_time() + ' 您没有开通服务器交易功能！'
+                self.statusBar().showMessage(rec_text)
+                _operating_record(rec_text)
+            else:
+                rec_text = _cur_time() + ' 服务器已经接收指令：{0}'.format(ser_reply)
+                self.statusBar().showMessage(rec_text)
+                _operating_record(rec_text)
+
+            self.nextBlockSize = 0
+
+    def _serverHasStopped(self):
+        self.socket.close()
+        # rec_text = _cur_time() + ' 错误：连接的服务器已经关闭！'
+        # self.statusBar().showMessage(rec_text)
+        # _operating_record(rec_text)
+
+    def _serverHasError(self, error):
+        self.socket.close()
+
+        rec_text = _cur_time() + ' 错误：{0}'.format(self.socket.errorString())
+        self.statusBar().showMessage(rec_text)
+        _operating_record(rec_text)
 
 
 class CDialog(QDialog):
@@ -309,10 +384,10 @@ class CDialog(QDialog):
     """
     def __init__(self):
         super().__init__()
-        self.initUI()
-        self.center()
+        self._initUI()
+        self._center()
 
-    def initUI(self):
+    def _initUI(self):
         self.setFixedSize(360, 220)
         self.setWindowTitle('设置交易环境相关变量')
         self.setWindowIcon(QIcon('myIcon.ico'))
@@ -330,11 +405,11 @@ class CDialog(QDialog):
         self.rb11 = QRadioButton('在本地交易', self)
         self.rb11.move(30, 70)
         self.rb11.setChecked(True)
-        self.rb11.toggled.connect(self.rb_toggled)
+        self.rb11.toggled.connect(self._rb_toggled)
 
         self.rb12 = QRadioButton('在服务器上交易', self)
         self.rb12.move(160, 70)
-        self.rb12.toggled.connect(self.rb_toggled)
+        self.rb12.toggled.connect(self._rb_toggled)
 
         self.lbl2 = QLabel('在下面输入MT4的Files文件夹路径：', self)
         self.lbl2.move(30, 105)
@@ -342,21 +417,21 @@ class CDialog(QDialog):
         self.qle_directory = QLineEdit(self)
         self.qle_directory.resize(300, 25)
         self.qle_directory.move(30, 140)
-        regex1 = QRegExp(r'^[C-Ec-e][\:][\\][A-Za-z0-o\\]+$')
+        regex1 = QRegExp(r'^[C-Ec-e][\:][\\][A-Za-z0-9\\]+$')
         self.qle_directory.setValidator(QRegExpValidator(regex1, self))
 
         btn_save = QPushButton('保存', self)
         btn_save.move(70, 180)
-        btn_save.clicked.connect(self.save_environment)
+        btn_save.clicked.connect(self._save_environment)
 
         btn_cancel = QPushButton('取消', self)
         btn_cancel.move(200, 180)
         btn_cancel.clicked.connect(self.close)
 
-    def rb_toggled(self):
+    def _rb_toggled(self):
         if self.rb11.isChecked():
             self.lbl2.setText('在下面输入MT4的Files文件夹路径：')
-            regex1 = QRegExp(r'^[C-Ec-e][\:][\\][A-Za-z0-o\\]+$')
+            regex1 = QRegExp(r'^[C-Ec-e][\:][\\][A-Za-z0-9\\]+$')
             self.qle_directory.setValidator(QRegExpValidator(regex1, self))
         elif self.rb12.isChecked():
             self.lbl2.setText('在下面输入服务器的IP地址和端口：')
@@ -365,7 +440,7 @@ class CDialog(QDialog):
                              r'((:2\d{3})|(:[1-6]\d{4}))$')
             self.qle_directory.setValidator(QRegExpValidator(regex1, self))
 
-    def save_environment(self):
+    def _save_environment(self):
         """
         设置交易环境，可以是本地的MT4的Files文件夹路径，也可以是服务器IP地址加端口
         """
@@ -389,32 +464,32 @@ class CDialog(QDialog):
                     config['Local'] = {'directory': qle_directory}
                 else:
                     save_yn = False
-                    QMessageBox.information(self, '错误提示!',
-                                            self.tr('请输入正确的MT4的Files文件夹路径!'))
+                    QMessageBox.critical(self, '错误提示!',
+                                         self.tr('请输入正确的MT4的Files文件夹路径!'))
 
             elif cur_mode == 'Network':
-                if self.ip_yn(qle_directory):
+                if self._ip_yn(qle_directory):
                     host = qle_directory[: qle_directory.find(':')]
                     port = qle_directory[qle_directory.find(':') + 1:]
                     config['Network'] = {'host': host,
                                          'port': port}
                 else:
                     save_yn = False
-                    QMessageBox.information(self, '错误提示!',
-                                            self.tr('请输入正确的IP地址和端口号!'))
+                    QMessageBox.critical(self, '错误提示!',
+                                         self.tr('请输入正确的IP地址和端口号!'))
 
             if save_yn:
                 with open('setting.cfg', 'w') as file_object:
                     config.write(file_object)
 
-                rec_text = cur_time() + ' 设置了交易环境'
-                my_operating_record(rec_text)
+                rec_text = _cur_time() + ' 设置了交易环境'
+                _operating_record(rec_text)
                 QMessageBox.information(self, '操作提示!',
                                         self.tr('已经成功设置了交易环境配置文件!'))
                 self.close()
 
 
-    def ip_yn(self, inp_text):
+    def _ip_yn(self, inp_text):
         """
         检查输入的IP地址和端口号是否符合规则
         格式为：127.0.0.1:2000
@@ -430,14 +505,14 @@ class CDialog(QDialog):
         else:
             return False
 
-    def center(self):
+    def _center(self):
         screen = QDesktopWidget().screenGeometry()
         size = self.geometry()
         self.move((screen.width() - size.width()) / 2 + 85,
                   (screen.height() - size.height()) - 180)
 
 
-def cur_time():
+def _cur_time():
     """
     获取当前时间，返回字符串
     """
@@ -446,7 +521,7 @@ def cur_time():
     return cur_time
 
 
-def my_operating_record(inp_text):
+def _operating_record(inp_text):
     """
     记录操作日志
     """
@@ -473,3 +548,4 @@ if __name__ == '__main__':
         d.show()
 
     sys.exit(app.exec_())
+
