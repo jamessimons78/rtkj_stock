@@ -99,17 +99,17 @@ class CWind(QMainWindow):
         self.cb_sell1.toggle()
         self.cb_sell1.setChecked(False)
 
-        btn_open1 = QPushButton('挂单/直开', self)
-        btn_open1.setToolTip('挂单或者当前市价开仓')
-        btn_open1.resize(85, 25)
-        btn_open1.move(200, 75)
-        btn_open1.clicked.connect(self._btn_open1_Clicked)
+        self.btn_open1 = QPushButton('挂单/直开', self)
+        self.btn_open1.setToolTip('挂单或者当前市价开仓')
+        self.btn_open1.resize(85, 25)
+        self.btn_open1.move(200, 75)
+        self.btn_open1.clicked.connect(self._btn_open1_Clicked)
 
-        btn_close1 = QPushButton('撤单/平仓', self)
-        btn_close1.setToolTip('撤销挂单或平掉已有仓位')
-        btn_close1.resize(85, 25)
-        btn_close1.move(200, 105)
-        btn_close1.clicked.connect(self._btn_close1_Clicked)
+        self.btn_close1 = QPushButton('撤单/平仓', self)
+        self.btn_close1.setToolTip('撤销挂单或平掉已有仓位')
+        self.btn_close1.resize(85, 25)
+        self.btn_close1.move(200, 105)
+        self.btn_close1.clicked.connect(self._btn_close1_Clicked)
 
         lab2 = QLabel('交易品种 (2)', self)
         lab2.move(20, 257)
@@ -130,17 +130,17 @@ class CWind(QMainWindow):
         self.cb_sell2.toggle()
         self.cb_sell2.setChecked(False)
 
-        btn_open2 = QPushButton('挂单/直开', self)
-        btn_open2.setToolTip('挂单或者当前市价开仓')
-        btn_open2.resize(85, 25)
-        btn_open2.move(200, 260)
-        btn_open2.clicked.connect(self._btn_open2_Clicked)
+        self.btn_open2 = QPushButton('挂单/直开', self)
+        self.btn_open2.setToolTip('挂单或者当前市价开仓')
+        self.btn_open2.resize(85, 25)
+        self.btn_open2.move(200, 260)
+        self.btn_open2.clicked.connect(self._btn_open2_Clicked)
 
-        btn_close2 = QPushButton('撤单/平仓', self)
-        btn_close2.setToolTip('撤销挂单或平掉已有仓位')
-        btn_close2.resize(85, 25)
-        btn_close2.move(200, 290)
-        btn_close2.clicked.connect(self._btn_close2_Clicked)
+        self.btn_close2 = QPushButton('撤单/平仓', self)
+        self.btn_close2.setToolTip('撤销挂单或平掉已有仓位')
+        self.btn_close2.resize(85, 25)
+        self.btn_close2.move(200, 290)
+        self.btn_close2.clicked.connect(self._btn_close2_Clicked)
 
         lbl3 = QLabel('单笔止损：%', self)
         lbl3.move(20, 335)
@@ -249,6 +249,17 @@ class CWind(QMainWindow):
 
         self._send_signal(signal_text)
 
+    def _updateUI(self):
+        if self.request is not None:
+            enabled = False
+        else:
+            enabled = True
+
+        self.btn_open1.setEnabled(enabled)
+        self.btn_close1.setEnabled(enabled)
+        self.btn_open2.setEnabled(enabled)
+        self.btn_close2.setEnabled(enabled)
+
     def _read_config(self):
         """
         读取交易环境的配置文件,返回MT4账户和IP地址或文件夹
@@ -309,6 +320,8 @@ class CWind(QMainWindow):
             stream.device().seek(0)
             stream.writeUInt16(self.request.size() - SIZEOF_UINT16)
 
+            self._updateUI()
+
             if self.socket.isOpen():
                 self.socket.close()
             self.socket.connectToHost(host, port)
@@ -352,6 +365,7 @@ class CWind(QMainWindow):
 
             self.nextBlockSize = 0
             self.socket.close()
+            self._updateUI()
             rec_text = _cur_time() + ' 已结断开服务器连接！'
             _operating_record(rec_text)
 
