@@ -209,9 +209,6 @@ class CWind(QMainWindow):
                 signal_text += '2'
 
             self._send_signal(signal_text)
-            # rec_text = _cur_time() + ' 执行' + signal_text + '操作'
-            # self.statusBar().showMessage(rec_text)
-            # _operating_record(rec_text)
         else:
             QMessageBox.information(self, '错误提示!',
                                     self.tr('请勾选交易方向后，再开仓!'))
@@ -223,9 +220,6 @@ class CWind(QMainWindow):
         signal_text = self.combo1.currentText() + 'CLOSE'
 
         self._send_signal(signal_text)
-        # rec_text = _cur_time() + ' 执行' + signal_text + '操作'
-        # self.statusBar().showMessage(rec_text)
-        # _operating_record(rec_text)
 
     def _btn_open2_Clicked(self):
         """
@@ -243,9 +237,6 @@ class CWind(QMainWindow):
                 signal_text += '2'
 
             self._send_signal(signal_text)
-            # rec_text = _cur_time() + ' 执行' + signal_text + '操作'
-            # self.statusBar().showMessage(rec_text)
-            # _operating_record(rec_text)
         else:
             QMessageBox.critical(self, '错误提示!',
                                  self.tr('请勾选交易方向后，再开仓!'))
@@ -257,9 +248,6 @@ class CWind(QMainWindow):
         signal_text = self.combo2.currentText() + 'CLOSE'
 
         self._send_signal(signal_text)
-        # rec_text = _cur_time() + ' 执行' + signal_text + '操作'
-        # self.statusBar().showMessage(rec_text)
-        # _operating_record(rec_text)
 
     def _read_config(self):
         """
@@ -325,7 +313,7 @@ class CWind(QMainWindow):
                 self.socket.close()
             self.socket.connectToHost(host, port)
 
-            rec_text = _cur_time() + ' 正在连接连接交易服务器{0}...'.format(host)
+            rec_text = _cur_time() + ' 正在连接连接交易服务器...'
             self.statusBar().showMessage(rec_text)
             _operating_record(rec_text)
 
@@ -363,12 +351,12 @@ class CWind(QMainWindow):
                 _operating_record(rec_text)
 
             self.nextBlockSize = 0
+            self.socket.close()
+            rec_text = _cur_time() + ' 已结断开服务器连接！'
+            _operating_record(rec_text)
 
     def _serverHasStopped(self):
         self.socket.close()
-        # rec_text = _cur_time() + ' 错误：连接的服务器已经关闭！'
-        # self.statusBar().showMessage(rec_text)
-        # _operating_record(rec_text)
 
     def _serverHasError(self, error):
         self.socket.close()

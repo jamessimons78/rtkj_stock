@@ -2,7 +2,7 @@ import os
 import sys
 import time
 from PyQt5.QtNetwork import (QTcpSocket, QTcpServer, QHostAddress)
-from PyQt5.QtCore import (QByteArray, QDataStream, QIODevice)
+from PyQt5.QtCore import (QByteArray, QDataStream, QIODevice, Qt)
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QMessageBox)
 
@@ -44,16 +44,19 @@ class CSerWind(QMainWindow):
                                      QMessageBox.Yes | QMessageBox.No,
                                      QMessageBox.No)
         if reply == QMessageBox.Yes:
-            self.socket.close()
             rec_text = _cur_time() + ' 关闭交易服务器！'
             _operating_record(rec_text)
             event.accept()
         else:
             event.ignore()
 
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_Escape:
+            self.showMinimized()
+
     def _initUI(self):
         self.setFixedSize(600, 400)
-        self.move(20, 20)
+        self.move(0, 60)
         self.setWindowTitle('交易服务器')
         self.setWindowIcon(QIcon('myIcon.ico'))
 
