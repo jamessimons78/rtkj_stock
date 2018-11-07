@@ -2,11 +2,12 @@ import os
 import sys
 import time
 import configparser
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import (QIcon, QStandardItemModel, QStandardItem)
 from PyQt5.QtNetwork import (QTcpSocket, QTcpServer, QAbstractSocket, QHostAddress)
 from PyQt5.QtCore import (QByteArray, QDataStream, QIODevice, pyqtSignal, QObject,
-                          Qt, QThread, QReadWriteLock)
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QMessageBox, QTextBrowser)
+                          Qt, QThread, QReadWriteLock, QModelIndex)
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QMessageBox, QTextBrowser,
+                             QTableView, QPushButton)
 
 SIZEOF_UINT16 = 2
 
@@ -50,10 +51,37 @@ class CSerWind(QMainWindow):
         self.setWindowTitle('交易服务器')
         self.setWindowIcon(QIcon('myIcon.ico'))
 
+        # TableView设置MT4账号及Files文件夹路径
+        self.model = QStandardItemModel(2, 2)
+        self.model.setHorizontalHeaderLabels(['MT4账号', 'Files文件夹路径'])
+        row = 0
+        for key, value in account_dir.items():
+            self.model.setItem(row, 0, QStandardItem(key))
+            self.model.setItem(row, 1, QStandardItem(value))
+            row += 1
+        self.table = QTableView(self)
+        self.table.setModel(self.model)
+        self.table.resize(500, 180)
+        self.table.move(10, 15)
+        self.table.horizontalHeader().setStretchLastSection(True)
+
+        tbn_append = QPushButton('添 加', self)
+        tbn_append.resize(70, 25)
+        tbn_append.move(520, 30)
+        tbn_append.clicked.connect(self.my_btn_append_clicked)
+        btn_delete = QPushButton('删 除', self)
+        btn_delete.resize(70, 25)
+        btn_delete.move(520, 90)
+        btn_delete.clicked.connect(self.my_btn_delete_clicked)
+        btn_save = QPushButton('保 存', self)
+        btn_save.resize(70, 25)
+        btn_save.move(520, 150)
+        btn_save.clicked.connect(self.my_btn_save_clicked)
+
         # 逐条显示交易服务器操作的每个记录
         self.text_browser = QTextBrowser(self)
-        self.text_browser.resize(500, 160)
-        self.text_browser.move(10, 220)
+        self.text_browser.resize(580, 180)
+        self.text_browser.move(10, 210)
 
         self.show()
 
@@ -77,6 +105,33 @@ class CSerWind(QMainWindow):
         if e.key() == Qt.Key_Escape:
             self.showMinimized()
 
+    def my_btn_append_clicked(self):
+        self.model.appendRow([
+            QStandardItem(''),
+            QStandardItem('')])
+
+    def my_btn_delete_clicked(self):
+        reply = QMessageBox.question(self, '操作提示！', '确定要删除这条数据？',
+                                     QMessageBox.Yes | QMessageBox.No,
+                                     QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            index = self.table.currentIndex()
+            self.model.removeRow(index.row())
+
+    def my_btn_save_clicked(self):
+        reply = QMessageBox.question(self, '操作提示！', '确定要覆盖原有数据？',
+                                     QMessageBox.Yes | QMessageBox.No,
+                                     QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            rows = self.model.rowCount()
+            account_dir = {}
+            for row in range(rows):
+                key = self.model.item(row, 0).text()
+                value = self.model.item(row, 1).text()
+                account_dir[key] = value
+                with open('account_dir.txt', 'w') as file_object:
+                    file_object.write(str(account_dir))
+
     def my_record(self, inp_text):
         """
         记录服务器操作日志保存到日志文件，并在主窗口TextBrowser组件中显示出来
@@ -88,6 +143,10 @@ class CSerWind(QMainWindow):
         with open(file_name, 'a+', encoding='UTF-8') as file_object:
             file_object.write(rec_text)
 
+        # text_browser只显示当天的操作记录
+        pre_text = self.text_browser.toPlainText()
+        if len(pre_text) > 0 and pre_text[0:10] != inp_text[0:10]:
+            self.text_browser.setText('')
         self.text_browser.append(inp_text)
 
 
@@ -230,7 +289,7 @@ def my_cur_time():
     获取当前时间，返回字符串
     """
     now = time.localtime()
-    cur_time = time.strftime('%H:%M:%S', now)
+    cur_time = time.strftime('%Y-%m-%d', now) + ' ' + time.strftime('%H:%M:%S', now)
     return cur_time
 
 
