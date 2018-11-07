@@ -1,11 +1,12 @@
 import os
+import re
 import sys
 import time
 import configparser
 from PyQt5.QtGui import (QIcon, QStandardItemModel, QStandardItem)
 from PyQt5.QtNetwork import (QTcpSocket, QTcpServer, QAbstractSocket, QHostAddress)
 from PyQt5.QtCore import (QByteArray, QDataStream, QIODevice, pyqtSignal, QObject,
-                          Qt, QThread, QReadWriteLock, QModelIndex)
+                          Qt, QThread, QReadWriteLock)
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMessageBox, QTextBrowser,
                              QTableView, QPushButton)
 
@@ -119,18 +120,44 @@ class CSerWind(QMainWindow):
             self.model.removeRow(index.row())
 
     def my_btn_save_clicked(self):
+        """
+        保存MT4账户信息到account_dir.txt文件中
+        """
         reply = QMessageBox.question(self, '操作提示！', '确定要覆盖原有数据？',
                                      QMessageBox.Yes | QMessageBox.No,
                                      QMessageBox.No)
         if reply == QMessageBox.Yes:
             rows = self.model.rowCount()
             account_dir = {}
+            regex = r'^[1-9]\d+$'
             for row in range(rows):
                 key = self.model.item(row, 0).text()
+                if not re.match(regex, key):
+                    QMessageBox.critical(self, '错误提示!',
+                                         self.tr('第 %s 行MT4账号格式不对!' % str(row+1)))
+                    return
                 value = self.model.item(row, 1).text()
+                if not os.path.exists(value) or value.find('\MQL4\Files') < 0:
+                    QMessageBox.critical(self, '错误提示!',
+                                         self.tr('第 %s 行Files文件路径不对!' % str(row+1)))
+                    return
                 account_dir[key] = value
+
+            try:
                 with open('account_dir.txt', 'w') as file_object:
                     file_object.write(str(account_dir))
+            except Exception as e:
+                QMessageBox.critical(self, '错误提示!',
+                                     self.tr('保存MT4账户信息出现错误！{0}'
+                                             .format(str(Exception))))
+
+            rec_text = my_cur_time() + ' 已经保存了当前列表中MT4账户信息！'
+            try:
+                self.lock.lockForWrite()
+                self.recordSignal.sendSignal.emit(rec_text)
+            finally:
+                self.lock.unlock()
+
 
     def my_record(self, inp_text):
         """
