@@ -107,11 +107,17 @@ class CSerWind(QMainWindow):
             self.showMinimized()
 
     def my_btn_append_clicked(self):
+        """
+        增加一个MT4账户
+        """
         self.model.appendRow([
             QStandardItem(''),
             QStandardItem('')])
 
     def my_btn_delete_clicked(self):
+        """
+        删除当前行的MT4账号信息
+        """
         reply = QMessageBox.question(self, '操作提示！', '确定要删除这条数据？',
                                      QMessageBox.Yes | QMessageBox.No,
                                      QMessageBox.No)
@@ -127,12 +133,12 @@ class CSerWind(QMainWindow):
                                      QMessageBox.Yes | QMessageBox.No,
                                      QMessageBox.No)
         if reply == QMessageBox.Yes:
+            account_dir_new = {}
             rows = self.model.rowCount()
-            account_dir = {}
-            regex = r'^[1-9]\d+$'
             for row in range(rows):
                 key = self.model.item(row, 0).text()
-                if not re.match(regex, key):
+                # 对MT4账号进行正则表达式匹配检查
+                if not re.match(r'^[1-9]\d+$', key):
                     QMessageBox.critical(self, '错误提示!',
                                          self.tr('第 %s 行MT4账号格式不对!' % str(row+1)))
                     return
@@ -141,16 +147,17 @@ class CSerWind(QMainWindow):
                     QMessageBox.critical(self, '错误提示!',
                                          self.tr('第 %s 行Files文件路径不对!' % str(row+1)))
                     return
-                account_dir[key] = value
-
+                account_dir_new[key] = value
+            # 保存文件
             try:
+                account_dir = account_dir_new
                 with open('account_dir.txt', 'w') as file_object:
                     file_object.write(str(account_dir))
             except Exception as e:
                 QMessageBox.critical(self, '错误提示!',
                                      self.tr('保存MT4账户信息出现错误！{0}'
                                              .format(str(Exception))))
-
+            # 记录这一操作
             rec_text = my_cur_time() + ' 已经保存了当前列表中MT4账户信息！'
             try:
                 self.lock.lockForWrite()
