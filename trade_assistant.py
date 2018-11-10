@@ -326,7 +326,7 @@ class CWind(QMainWindow):
                 self.socket.close()
             self.socket.connectToHost(host, port)
 
-            rec_text = my_cur_time() + ' 正在连接连接交易服务器...'
+            rec_text = my_cur_time() + ' 正在连接远程交易服务器...'
             self.statusBar().showMessage(rec_text)
             my_operating_record(rec_text)
 
