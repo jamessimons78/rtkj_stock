@@ -205,7 +205,6 @@ class Thread(QThread):
                 nextBlockSize = stream.readUInt16()
             else:
                 rec_text = ' 无法正常读取客户端的请求！'
-                self.my_sendReply(socket, rec_text)
                 rec_text = my_cur_time() + rec_text
                 try:
                     self.lock.lockForWrite()
@@ -218,7 +217,6 @@ class Thread(QThread):
                 if not socket.waitForReadyRead(5000) or \
                         socket.bytesAvailable() < nextBlockSize:
                     rec_text = ' 无法正常读取客户端的数据！'
-                    self.my_sendReply(socket, rec_text)
                     rec_text = my_cur_time() + rec_text
                     try:
                         self.lock.lockForWrite()
@@ -229,56 +227,65 @@ class Thread(QThread):
 
             # MT4交易账号
             account_number = stream.readQString()
-            # 交易指令
-            trade_instruction = stream.readQString()
-            rec_text = my_cur_time() + ' 已读取到来自 {0} 的交易指令：{1}'.format(account_number, trade_instruction)
-            try:
-                self.lock.lockForWrite()
-                self.recordSignal.sendSignal.emit(rec_text)
-            finally:
-                self.lock.unlock()
-
-            try:
-                self.lock.lockForRead()
-                directory = account_dir.get(account_number, 'None')
-            finally:
-                self.lock.unlock()
-
-            if directory == 'None':
-                reply_text = 'None'
-                rec_text = my_cur_time() + ' 交易账号 {0} 没有获得交易服务器的授权！'.format(account_number)
+            if re.match(r'^[1-9]\d+$', account_number):
+                # 交易指令
+                trade_instruction = stream.readQString()
+                rec_text = my_cur_time() + ' 已读取到来自 {0} 的交易指令：{1}'.format(account_number, trade_instruction)
                 try:
                     self.lock.lockForWrite()
                     self.recordSignal.sendSignal.emit(rec_text)
                 finally:
                     self.lock.unlock()
+
+                try:
+                    self.lock.lockForRead()
+                    directory = account_dir.get(account_number, 'None')
+                finally:
+                    self.lock.unlock()
+
+                if directory == 'None':
+                    reply_text = 'None'
+                    rec_text = my_cur_time() + ' 交易账号 {0} 没有获得交易服务器的授权！'.format(account_number)
+                    try:
+                        self.lock.lockForWrite()
+                        self.recordSignal.sendSignal.emit(rec_text)
+                    finally:
+                        self.lock.unlock()
+                else:
+                    file_path = directory
+                    # 将交易指令存到相应账号MT4的Files文件夹里
+                    symbols = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY']
+                    for symbol in symbols:
+                        if trade_instruction.find(symbol) >= 0:
+                            trade_symbol = symbol
+                    # 检查交易品种的子文件夹是否存在，不存在就新建相应的子文件夹
+                    if os.path.exists(file_path + '\\' + trade_symbol) == False:
+                        os.mkdir(file_path + '\\' + trade_symbol)
+                    file_path = file_path + '\\' + trade_symbol + '\\'
+                    # 将指令存到对应的子文件夹里
+                    file_name = file_path + 'trade_signal.txt'
+                    with open(file_name, 'w') as file_object:
+                        file_object.write(trade_instruction)
+
+                    reply_text = trade_instruction
+
+                try:
+                    self.lock.lockForWrite()
+                    rec_text = my_cur_time() + ' 已将交易指令存到相应的MT4的Files文件夹里！'
+                    self.recordSignal.sendSignal.emit(rec_text)
+                finally:
+                    self.lock.unlock()
+
+                self.my_sendReply(socket, reply_text)
+                socket.waitForDisconnected()
             else:
-                file_path = directory
-                # 将交易指令存到相应账号MT4的Files文件夹里
-                symbols = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY']
-                for symbol in symbols:
-                    if trade_instruction.find(symbol) >= 0:
-                        trade_symbol = symbol
-                # 检查交易品种的子文件夹是否存在，不存在就新建相应的子文件夹
-                if os.path.exists(file_path + '\\' + trade_symbol) == False:
-                    os.mkdir(file_path + '\\' + trade_symbol)
-                file_path = file_path + '\\' + trade_symbol + '\\'
-                # 将指令存到对应的子文件夹里
-                file_name = file_path + 'trade_signal.txt'
-                with open(file_name, 'w') as file_object:
-                    file_object.write(trade_instruction)
-
-                reply_text = trade_instruction
-
-            try:
-                self.lock.lockForWrite()
-                rec_text = my_cur_time() + ' 已将交易指令存到相应的MT4的Files文件夹里！'
-                self.recordSignal.sendSignal.emit(rec_text)
-            finally:
-                self.lock.unlock()
-
-            self.my_sendReply(socket, reply_text)
-            socket.waitForDisconnected()
+                rec_text = ' 接收到非正常的数据，可能是网络攻击！'
+                rec_text = my_cur_time() + rec_text
+                try:
+                    self.lock.lockForWrite()
+                    self.recordSignal.sendSignal.emit(rec_text)
+                finally:
+                    self.lock.unlock()
 
     def my_sendReply(self, socket, inp_text):
         reply = QByteArray()
