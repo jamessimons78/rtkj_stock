@@ -174,7 +174,7 @@ class CWind(QMainWindow):
     def my_center(self):
         screen = QDesktopWidget().screenGeometry()
         size = self.geometry()
-        self.move((screen.width() - size.width()) / 2 + 90,
+        self.move((screen.width() - size.width()) / 2 + 140,
                   (screen.height() - size.height() - 90))
 
     def my_init_timer(self):
