@@ -209,7 +209,7 @@ class CWind(QMainWindow):
         定时刷新各品种的ATR
         """
         self.timer1 = QTimer()
-        self.timer1.setInterval(10000)
+        self.timer1.setInterval(5000)
         self.timer1.start()
         self.timer1.timeout.connect(self.my_update_atr)
 
