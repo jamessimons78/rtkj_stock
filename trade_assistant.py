@@ -21,6 +21,7 @@ class CWind(QMainWindow):
         super().__init__()
         self._initUI()
         self.my_init_timer()
+        self.my_init_timer1()
 
         self.socket = QTcpSocket()
         self.nextBlockSize = 0
@@ -35,6 +36,7 @@ class CWind(QMainWindow):
         self.config = ()
         if os.path.isfile('setting.cfg') == True:
             self.config = self.my_read_config()
+            self.my_update_atr()
 
         # 状态栏显示启动信息，并存入日志文件
         rec_text = my_cur_time() + ' 开启交易助手！'
@@ -79,6 +81,15 @@ class CWind(QMainWindow):
 
         # 以下布局窗口各个控件
 
+        self.lab0 = QLabel('', self)
+        font0 = QFont()
+        font0.setFamily("微软雅黑")
+        font0.setPointSize(9)
+        self.lab0.setFont(font0)
+        self.lab0.setStyleSheet('background-color: rgb(216, 216, 107); color: rgb(170, 0, 0);')
+        self.lab0.resize(280, 20)
+        self.lab0.move(9, 36)
+
         symbols = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY']
 
         lab1 = QLabel('交易品种 (1)', self)
@@ -88,6 +99,9 @@ class CWind(QMainWindow):
         for symbol in symbols:
             self.combo1.addItem(symbol)
         self.combo1.move(20, 102)
+        font12 = QFont()
+        font12.setBold(True)
+        self.combo1.setFont(font12)
 
         self.cb_buy1 = QCheckBox('做多', self)
         self.cb_buy1.move(140, 75)
@@ -119,6 +133,7 @@ class CWind(QMainWindow):
             self.combo2.addItem(symbol)
         self.combo2.setCurrentText(symbols[1])
         self.combo2.move(20, 287)
+        self.combo2.setFont(font12)
 
         self.cb_buy2 = QCheckBox('做多', self)
         self.cb_buy2.move(140, 260)
@@ -174,10 +189,13 @@ class CWind(QMainWindow):
     def my_center(self):
         screen = QDesktopWidget().screenGeometry()
         size = self.geometry()
-        self.move((screen.width() - size.width()) / 2 + 140,
+        self.move((screen.width() - size.width()) / 2 + 132,
                   (screen.height() - size.height() - 90))
 
     def my_init_timer(self):
+        """
+        定时刷新LCD时钟
+        """
         self.timer = QTimer()
         self.timer.setInterval(1000)
         self.timer.start()
@@ -185,6 +203,37 @@ class CWind(QMainWindow):
 
     def my_update_time(self):
         self.lcd.display(time.strftime("%X", time.localtime()))
+
+    def my_init_timer1(self):
+        """
+        定时刷新各品种的ATR
+        """
+        self.timer1 = QTimer()
+        self.timer1.setInterval(10000)
+        self.timer1.start()
+        self.timer1.timeout.connect(self.my_update_atr)
+
+    def my_update_atr(self):
+        """
+        读取ATR文件并更新标签文本
+        """
+        if len(self.config) == 0:
+            self.config = self.my_read_config()
+        mode = self.config[1]
+        # 从配置文件里找到看盘MT4的Files文件夹
+        if mode == 'Local':
+            atr_file_path = self.config[3]
+        elif mode == 'Network':
+            atr_file_path = self.config[4]
+
+        # ATR文件存放在看盘MT4的Files文件夹里
+        file_name = atr_file_path + '\\' + 'myatr.txt'
+        if os.path.isfile(file_name):
+            with open(file_name, 'r') as file_object:
+                atr = file_object.read()
+            self.lab0.setText(atr[:38])
+        else:
+            self.lab0.setText('请打开MT4看盘软件并加载ATR_EA程序')
 
     def _about(self):
         """
@@ -269,15 +318,16 @@ class CWind(QMainWindow):
 
         account_number = config.get('MT4', 'account_number')
         mode = config.get('Pathway', 'mode')
+        atr = config.get('ATR', 'directory')
 
         if config.get('Pathway', 'mode') == 'Local':
             directory = config.get('Local', 'directory')
-            return account_number, mode, directory
+            return account_number, mode, directory, atr
 
         elif config.get('Pathway', 'mode') == 'Network':
             host = config.get('Network', 'host')
             port = config.get('Network', 'port')
-            return account_number, mode, host, port
+            return account_number, mode, host, port, atr
 
     def my_send_signal(self, inp_text):
         """
@@ -390,7 +440,7 @@ class CDialog(QDialog):
         self.my_center()
 
     def _initUI(self):
-        self.setFixedSize(360, 220)
+        self.setFixedSize(360, 320)
         self.setWindowTitle('设置交易环境变量')
         self.setWindowIcon(QIcon('myIcon.ico'))
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
@@ -413,7 +463,7 @@ class CDialog(QDialog):
         self.rb12.move(160, 70)
         self.rb12.toggled.connect(self.my_rb_toggled)
 
-        self.lbl2 = QLabel('在下面输入MT4的Files文件夹路径：', self)
+        self.lbl2 = QLabel('在下面输入交易MT4的Files文件夹路径：', self)
         self.lbl2.move(30, 105)
 
         self.qle_directory = QLineEdit(self)
@@ -422,12 +472,20 @@ class CDialog(QDialog):
         regex1 = QRegExp(r'^[C-Ec-e][\:][\\][A-Za-z0-9\\]+$')
         self.qle_directory.setValidator(QRegExpValidator(regex1, self))
 
+        self.lbl3 = QLabel('在下面输入看盘MT4的Files文件夹路径：', self)
+        self.lbl3.move(30, 185)
+
+        self.qle_directory1 = QLineEdit(self)
+        self.qle_directory1.resize(300, 25)
+        self.qle_directory1.move(30, 220)
+        self.qle_directory1.setValidator(QRegExpValidator(regex1, self))
+
         btn_save = QPushButton('保存', self)
-        btn_save.move(70, 180)
+        btn_save.move(70, 260)
         btn_save.clicked.connect(self.my_save_environment)
 
         btn_cancel = QPushButton('取消', self)
-        btn_cancel.move(200, 180)
+        btn_cancel.move(200, 260)
         btn_cancel.clicked.connect(self.close)
 
     def closeEvent(self, event):
@@ -437,7 +495,7 @@ class CDialog(QDialog):
 
     def my_rb_toggled(self):
         if self.rb11.isChecked():
-            self.lbl2.setText('在下面输入MT4的Files文件夹路径：')
+            self.lbl2.setText('在下面输入交易MT4的Files文件夹路径：')
             regex1 = QRegExp(r'^[C-Ec-e][\:][\\][A-Za-z0-9\\]+$')
             self.qle_directory.setValidator(QRegExpValidator(regex1, self))
         elif self.rb12.isChecked():
@@ -454,7 +512,9 @@ class CDialog(QDialog):
         save_yn = True
         qle_number = self.qle_number.text()
         qle_directory = self.qle_directory.text()
-        if len(qle_number.split()) > 0 and len(qle_directory.split()) > 0:
+        qle_directory1 = self.qle_directory1.text()
+        if len(qle_number.split()) > 0 and len(qle_directory.split()) > 0 \
+                and len(qle_directory1.split()) > 0:
 
             config = configparser.ConfigParser()
             config['MT4'] = {'account_number': qle_number}
@@ -472,7 +532,7 @@ class CDialog(QDialog):
                 else:
                     save_yn = False
                     QMessageBox.critical(self, '错误提示!',
-                                         self.tr('请输入正确的MT4的Files文件夹路径!'))
+                                         self.tr('请输入正确的交易MT4的Files文件夹路径!'))
 
             elif cur_mode == 'Network':
                 if self.my_ip_yn(qle_directory):
@@ -484,6 +544,12 @@ class CDialog(QDialog):
                     save_yn = False
                     QMessageBox.critical(self, '错误提示!',
                                          self.tr('请输入正确的IP地址和端口号!'))
+
+            if os.path.exists(qle_directory1) and qle_directory1.find('\MQL4\Files') > 0:
+                config['ATR'] = {'directory': qle_directory1}
+            else:
+                save_yn = False
+                QMessageBox.critical(self, '错误提示!', self.tr('请输入正确的看盘MT4的Files文件夹路径!'))
 
             if save_yn:
                 with open('setting.cfg', 'w') as file_object:
@@ -516,8 +582,8 @@ class CDialog(QDialog):
     def my_center(self):
         screen = QDesktopWidget().screenGeometry()
         size = self.geometry()
-        self.move((screen.width() - size.width()) / 2 + 85,
-                  (screen.height() - size.height()) - 180)
+        self.move((screen.width() - size.width()) / 2 + 128,
+                  (screen.height() - size.height()) - 130)
 
 
 def my_cur_time():
