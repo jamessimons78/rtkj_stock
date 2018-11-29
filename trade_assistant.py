@@ -85,10 +85,11 @@ class CWind(QMainWindow):
         font0 = QFont()
         font0.setFamily("微软雅黑")
         font0.setPointSize(9)
+        font0.setBold(True)
         self.lab0.setFont(font0)
-        self.lab0.setStyleSheet('background-color: rgb(216, 216, 107); color: rgb(170, 0, 0);')
-        self.lab0.resize(280, 20)
-        self.lab0.move(9, 36)
+        self.lab0.setStyleSheet('color: rgb(0, 0, 127)')
+        self.lab0.resize(288, 20)
+        self.lab0.move(5, 36)
 
         symbols = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY']
 
