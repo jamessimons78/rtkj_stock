@@ -230,9 +230,12 @@ class CWind(QMainWindow):
         # ATR文件存放在看盘MT4的Files文件夹里
         file_name = atr_file_path + '\\' + 'myatr.txt'
         if os.path.isfile(file_name):
-            with open(file_name, 'r') as file_object:
-                atr = file_object.read()
-            self.lab0.setText(atr[:38])
+            try:
+                with open(file_name, 'r') as file_object:
+                    atr = file_object.read()
+                self.lab0.setText(atr[:38])
+            except:
+                pass
         else:
             self.lab0.setText('请打开MT4看盘软件并加载ATR_EA程序')
 
