@@ -21,7 +21,6 @@ class CWind(QMainWindow):
         super().__init__()
         self._initUI()
         self.my_init_timer()
-        self.my_init_timer1()
 
         self.socket = QTcpSocket()
         self.nextBlockSize = 0
@@ -195,7 +194,7 @@ class CWind(QMainWindow):
 
     def my_init_timer(self):
         """
-        定时刷新LCD时钟
+        定时器
         """
         self.timer = QTimer()
         self.timer.setInterval(1000)
@@ -203,16 +202,10 @@ class CWind(QMainWindow):
         self.timer.timeout.connect(self.my_update_time)
 
     def my_update_time(self):
+        # 定时刷新LCD时钟
         self.lcd.display(time.strftime("%X", time.localtime()))
-
-    def my_init_timer1(self):
-        """
-        定时刷新各品种的ATR
-        """
-        self.timer1 = QTimer()
-        self.timer1.setInterval(5000)
-        self.timer1.start()
-        self.timer1.timeout.connect(self.my_update_atr)
+        # 定时刷新各品种的ATR
+        self.my_update_atr()
 
     def my_update_atr(self):
         """
