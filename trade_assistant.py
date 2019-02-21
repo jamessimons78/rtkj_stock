@@ -197,13 +197,13 @@ class CWind(QMainWindow):
         定时器
         """
         self.timer = QTimer()
-        self.timer.setInterval(1000)
+        self.timer.setInterval(500)
         self.timer.start()
         self.timer.timeout.connect(self.my_update_timer)
 
     def my_update_timer(self):
         # 定时刷新LCD时钟
-        self.lcd.display(time.strftime("%X", time.localtime()))
+        # self.lcd.display(time.strftime("%X", time.localtime()))
         # 定时刷新各品种的ATR
         self.my_update_atr()
 
@@ -226,10 +226,12 @@ class CWind(QMainWindow):
             try:
                 with open(file_name, 'r') as file_object:
                     atr = file_object.read()
+                # 刷新各品种的ATR
                 self.lab0.setText(atr[:38])
+                # 刷新LCD时钟（交易服务器时间）
+                self.lcd.display(atr[43:48])
             except:
-                rec_text = my_cur_time() + ' 读取ATR文件时出现异常！'
-                my_operating_record(rec_text)
+                pass
         else:
             self.lab0.setText('请打开MT4看盘软件并加载ATR_EA程序')
 
