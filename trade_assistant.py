@@ -93,37 +93,43 @@ class CWind(QMainWindow):
         symbols = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY']
 
         lab1 = QLabel('交易品种 (1)', self)
-        lab1.move(20, 72)
+        lab1.move(20, 77)
 
         self.combo1 = QComboBox(self)
         for symbol in symbols:
             self.combo1.addItem(symbol)
-        self.combo1.move(20, 102)
+        self.combo1.move(20, 112)
         font12 = QFont()
         font12.setBold(True)
         self.combo1.setFont(font12)
 
         self.cb_buy1 = QCheckBox('做多', self)
-        self.cb_buy1.move(140, 75)
+        self.cb_buy1.move(140, 80)
         self.cb_buy1.toggle()
         self.cb_buy1.setChecked(False)
 
         self.cb_sell1 = QCheckBox('做空', self)
-        self.cb_sell1.move(140, 105)
+        self.cb_sell1.move(140, 115)
         self.cb_sell1.toggle()
         self.cb_sell1.setChecked(False)
 
         self.btn_open1 = QPushButton('挂单/直开', self)
         self.btn_open1.setToolTip('挂单或者当前市价开仓')
         self.btn_open1.resize(85, 25)
-        self.btn_open1.move(200, 75)
+        self.btn_open1.move(200, 70)
         self.btn_open1.clicked.connect(self.my_btn_open1_Clicked)
 
         self.btn_close1 = QPushButton('撤单/平仓', self)
         self.btn_close1.setToolTip('撤销挂单或平掉已有仓位')
         self.btn_close1.resize(85, 25)
-        self.btn_close1.move(200, 105)
+        self.btn_close1.move(200, 100)
         self.btn_close1.clicked.connect(self.my_btn_close1_Clicked)
+
+        self.btn_ProtectiveStop1 = QPushButton('保护性止损', self)
+        self.btn_ProtectiveStop1.setToolTip('将止损移到成本价')
+        self.btn_ProtectiveStop1.resize(85, 25)
+        self.btn_ProtectiveStop1.move(200, 130)
+        self.btn_ProtectiveStop1.clicked.connect(self.my_btn_ProtectiveStop1_Clicked)
 
         lab2 = QLabel('交易品种 (2)', self)
         lab2.move(20, 257)
@@ -132,7 +138,7 @@ class CWind(QMainWindow):
         for symbol in symbols:
             self.combo2.addItem(symbol)
         self.combo2.setCurrentText(symbols[1])
-        self.combo2.move(20, 287)
+        self.combo2.move(20, 292)
         self.combo2.setFont(font12)
 
         self.cb_buy2 = QCheckBox('做多', self)
@@ -141,31 +147,37 @@ class CWind(QMainWindow):
         self.cb_buy2.setChecked(False)
 
         self.cb_sell2 = QCheckBox('做空', self)
-        self.cb_sell2.move(140, 290)
+        self.cb_sell2.move(140, 295)
         self.cb_sell2.toggle()
         self.cb_sell2.setChecked(False)
 
         self.btn_open2 = QPushButton('挂单/直开', self)
         self.btn_open2.setToolTip('挂单或者当前市价开仓')
         self.btn_open2.resize(85, 25)
-        self.btn_open2.move(200, 260)
+        self.btn_open2.move(200, 250)
         self.btn_open2.clicked.connect(self.my_btn_open2_Clicked)
 
         self.btn_close2 = QPushButton('撤单/平仓', self)
         self.btn_close2.setToolTip('撤销挂单或平掉已有仓位')
         self.btn_close2.resize(85, 25)
-        self.btn_close2.move(200, 290)
+        self.btn_close2.move(200, 280)
         self.btn_close2.clicked.connect(self.my_btn_close2_Clicked)
 
+        self.btn_ProtectiveStop2 = QPushButton('保护性止损', self)
+        self.btn_ProtectiveStop2.setToolTip('将止损移到成本价')
+        self.btn_ProtectiveStop2.resize(85, 25)
+        self.btn_ProtectiveStop2.move(200, 310)
+        self.btn_ProtectiveStop2.clicked.connect(self.my_btn_ProtectiveStop2_Clicked)
+
         lbl3 = QLabel('单笔止损：%', self)
-        lbl3.move(20, 335)
+        lbl3.move(20, 345)
         self.rb11 = QRadioButton('0.5', self)
-        self.rb11.move(115, 335)
+        self.rb11.move(115, 345)
         self.rb11.setChecked(True)
         self.rb12 = QRadioButton('1.0', self)
-        self.rb12.move(175, 335)
+        self.rb12.move(175, 345)
         self.rb13 = QRadioButton('2.0', self)
-        self.rb13.move(235, 335)
+        self.rb13.move(235, 345)
 
         self.show()
 
@@ -270,6 +282,14 @@ class CWind(QMainWindow):
 
         self.my_send_signal(signal_text)
 
+    def my_btn_ProtectiveStop1_Clicked(self):
+        """
+        保护性止损
+        """
+        signal_text = self.combo1.currentText() + 'ProtectiveStop'
+
+        self.my_send_signal(signal_text)
+
     def my_btn_open2_Clicked(self):
         """
         挂单或直接市价开仓操作
@@ -295,6 +315,14 @@ class CWind(QMainWindow):
         撤销挂单，或平掉已有仓位
         """
         signal_text = self.combo2.currentText() + 'CLOSE'
+
+        self.my_send_signal(signal_text)
+
+    def my_btn_ProtectiveStop2_Clicked(self):
+        """
+        保护性止损
+        """
+        signal_text = self.combo2.currentText() + 'ProtectiveStop'
 
         self.my_send_signal(signal_text)
 
