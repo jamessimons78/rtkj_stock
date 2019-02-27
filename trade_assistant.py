@@ -125,7 +125,7 @@ class CWind(QMainWindow):
         self.btn_close1.move(200, 100)
         self.btn_close1.clicked.connect(self.my_btn_close1_Clicked)
 
-        self.btn_ProtectiveStop1 = QPushButton('保护性止损', self)
+        self.btn_ProtectiveStop1 = QPushButton('成本价离场', self)
         self.btn_ProtectiveStop1.setToolTip('将止损移到成本价')
         self.btn_ProtectiveStop1.resize(85, 25)
         self.btn_ProtectiveStop1.move(200, 130)
@@ -163,7 +163,7 @@ class CWind(QMainWindow):
         self.btn_close2.move(200, 280)
         self.btn_close2.clicked.connect(self.my_btn_close2_Clicked)
 
-        self.btn_ProtectiveStop2 = QPushButton('保护性止损', self)
+        self.btn_ProtectiveStop2 = QPushButton('成本价离场', self)
         self.btn_ProtectiveStop2.setToolTip('将止损移到成本价')
         self.btn_ProtectiveStop2.resize(85, 25)
         self.btn_ProtectiveStop2.move(200, 310)
@@ -334,8 +334,10 @@ class CWind(QMainWindow):
 
         self.btn_open1.setEnabled(enabled)
         self.btn_close1.setEnabled(enabled)
+        self.btn_ProtectiveStop1.setEnabled(enabled)
         self.btn_open2.setEnabled(enabled)
         self.btn_close2.setEnabled(enabled)
+        self.btn_ProtectiveStop2.setEnabled(enabled)
 
     def my_read_config(self):
         """
